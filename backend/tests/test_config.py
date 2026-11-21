@@ -86,3 +86,18 @@ def test_database_url_takes_precedence_over_granular_settings():
     )
     assert "customhost" in config.sqlalchemy_database_uri
     assert "otherhost" not in config.sqlalchemy_database_uri
+
+
+def test_database_url_placeholder_falls_back_to_granular():
+    """Validates that if DATABASE_URL contains default placeholder text, real granular password takes precedence."""
+    config = Settings(
+        DATABASE_URL="postgresql+psycopg://postgres.iwwleppesznhdecsickr:YOUR_ACTUAL_PASSWORD@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres",
+        DB_HOST="aws-1-ap-southeast-2.pooler.supabase.com",
+        DB_PORT=5432,
+        DB_NAME="postgres",
+        DB_USER="postgres.iwwleppesznhdecsickr",
+        DB_PASSWORD="real_secret_password",
+    )
+    uri = config.sqlalchemy_database_uri
+    assert "real_secret_password" in uri
+    assert "YOUR_ACTUAL_PASSWORD" not in uri

@@ -95,14 +95,21 @@ class Settings(BaseSettings):
         Prefers DATABASE_URL as single source of truth; falls back to granular components.
         """
         raw_url = self.DATABASE_URL.strip()
-        if raw_url:
+        # If DATABASE_URL still has placeholder text but DB_PASSWORD has been set, fall back to granular
+        placeholder_tokens = ("YOUR_ACTUAL_PASSWORD", "[YOUR-DATABASE-PASSWORD]", "<existing")
+        has_url_placeholder = any(token in raw_url for token in placeholder_tokens)
+        has_granular_password = bool(
+            self.DB_PASSWORD and not any(token in self.DB_PASSWORD for token in placeholder_tokens)
+        )
+
+        if raw_url and not (has_url_placeholder and has_granular_password):
             if raw_url.startswith("postgres://"):
                 return raw_url.replace("postgres://", "postgresql+psycopg://", 1)
             if raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+"):
                 return raw_url.replace("postgresql://", "postgresql+psycopg://", 1)
             return raw_url
 
-        # Fall back to granular connection components if DATABASE_URL is not set
+        # Fall back to granular connection components if DATABASE_URL is not set or holds placeholder
         if self.DB_HOST and self.DB_USER:
             user_encoded = quote_plus(self.DB_USER)
             pass_encoded = quote_plus(self.DB_PASSWORD) if self.DB_PASSWORD else ""
