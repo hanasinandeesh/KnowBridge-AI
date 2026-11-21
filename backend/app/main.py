@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.documents import router as documents_router
 from app.api.routes.health import router as health_router
 from app.core.config import settings
 from app.core.database import check_db_connected, close_db_connection
@@ -70,6 +71,7 @@ app.include_router(health_router)
 
 # Also mount under /api/v1 for API versioning consistency
 app.include_router(health_router, prefix=settings.API_V1_STR)
+app.include_router(documents_router, prefix=f"{settings.API_V1_STR}/documents")
 
 
 @app.get("/", tags=["root"])
