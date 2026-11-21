@@ -1,15 +1,15 @@
 # KnowBridge AI — Current System Status & Health Report
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
-**Report Date:** November 21, 2026  
+**Report Date:** November 22, 2026  
 **Engineering Lead:** Senior Python Backend Engineer & AI Architect  
-**Current Milestone:** Task 02B Completed — Ready for Task 04 (Document Ingestion Engine)  
+**Current Milestone:** Task 003A Completed — Ready for Task 003B / Task 04 (Ingestion Engine & Storage)  
 
 ---
 
 ## 1. Executive Summary
 
-KnowBridge AI has completed all foundational specification, system architecture, database schema, and backend infrastructure phases. The FastAPI backend application is integrated with Supabase PostgreSQL via SQLAlchemy 2.0 and the modern `psycopg` (v3) driver. Connection lifecycle management, connection pooling, credential sanitization, health monitoring endpoints, and comprehensive automated test suites are fully implemented and verified.
+KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, and the **Task 003A Document Upload API**. The FastAPI backend application is integrated with Supabase PostgreSQL via SQLAlchemy 2.0 and the modern `psycopg` (v3) driver. The new `POST /api/v1/documents/upload` endpoint provides strict multi-layer validation (path traversal defense, MIME checking, size limits, and magic-byte signature validation for PDF, DOCX, and TXT files) and persists initial document records directly into Supabase PostgreSQL with status `'uploaded'`. Connection lifecycle management, connection pooling, credential sanitization, health monitoring endpoints, and comprehensive automated test suites (42 tests, 100% pass rate) are fully verified.
 
 ---
 
@@ -23,9 +23,10 @@ KnowBridge AI has completed all foundational specification, system architecture,
 │ TASK 02: System Design & Architecture Documentation    │ COMPLETED   │ System Design, Data Flow  │
 │ TASK 02A: Design & Implement Supabase Database         │ COMPLETED   │ Migrations, HNSW, DDL     │
 │ TASK 02B: FastAPI & Supabase PostgreSQL Integration    │ COMPLETED   │ SQLAlchemy, Health APIs   │
+│ TASK 003A: Document Upload API & Validation            │ COMPLETED   │ Upload API, 42 tests, DB  │
 │ TASK 04: Ingestion Engine & Document Processing        │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
-│ TASK 06: FastAPI API Endpoints                         │ PENDING     │ Blocked by Task 05        │
+│ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3A)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
 │ TASK 08: Evaluation (RAGAS) & Observability (Langfuse) │ PENDING     │ Blocked by Task 06        │
 │ TASK 09: Production Deployment & E2E Validation        │ PENDING     │ Blocked by Task 07 & 08   │
@@ -78,35 +79,43 @@ KnowBridge AI has completed all foundational specification, system architecture,
 ## 4. API Endpoints State
 
 ```
-┌────────────────────┬────────┬──────────────┬────────────────────────────────────────────────────────┐
-│ Endpoint           │ Method │ Status Code  │ Description & Payload                                  │
-├────────────────────┼────────┼──────────────┼────────────────────────────────────────────────────────┤
-│ /health            │ GET    │ 200 OK       │ Returns app health, project name, environment.         │
-│ /api/v1/health     │ GET    │ 200 OK       │ Versioned health probe mirror.                         │
-│ /health/db         │ GET    │ 200 / 503    │ Executes 'SELECT 1'. Returns latency & dialect if      │
-│                    │        │              │ connected; 503 with sanitized error if disconnected.   │
-│ /                  │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
-└────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
+┌────────────────────────────┬────────┬──────────────┬────────────────────────────────────────────────────────┐
+│ Endpoint                   │ Method │ Status Code  │ Description & Payload                                  │
+├────────────────────────────┼────────┼──────────────┼────────────────────────────────────────────────────────┤
+│ /health                    │ GET    │ 200 OK       │ Returns app health, project name, environment.         │
+│ /api/v1/health             │ GET    │ 200 OK       │ Versioned health probe mirror.                         │
+│ /health/db                 │ GET    │ 200 / 503    │ Executes 'SELECT 1'. Returns latency & dialect if      │
+│                            │        │              │ connected; 503 with sanitized error if disconnected.   │
+│ /api/v1/documents/upload   │ POST   │ 201 Created  │ Validates and uploads PDF/DOCX/TXT; persists metadata. │
+│ /                          │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
+└────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 5. Test Suite Verification Metrics
 
-- **Test Runner:** `pytest 9.1.1`
-- **Total Tests:** 17 automated unit and integration tests.
-- **Pass Rate:** 100% (17 passed in 2.40s).
+- **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
+- **Total Tests:** 42 automated tests (41 isolated unit/API tests + 1 opt-in live integration test).
+- **Pass Rate:** 100% (41 passed in 1.08s).
 - **Coverage Areas:**
   - Configuration defaults and environment overrides (`backend/tests/test_config.py`).
   - Driver URI normalization and dialect conversion (`backend/tests/test_config.py`).
   - Plaintext credential redaction in telemetry properties (`backend/tests/test_config.py`).
   - Graceful fallback when `DATABASE_URL` has placeholder text (`backend/tests/test_config.py`).
   - Special character URL-encoding in database passwords (`backend/tests/test_config.py`).
-  - Application health checks (`backend/tests/test_health.py`).
-  - Database connectivity probe with `SELECT 1` scalar resolution (`backend/tests/test_health.py`).
-  - Degraded connection handling and 503 status code response (`backend/tests/test_health.py`).
-  - Error message sanitization preventing password leakage (`backend/tests/test_health.py`).
+  - Application health checks and database connectivity (`backend/tests/test_health.py`).
+  - Error message sanitization preventing credential leakage (`backend/tests/test_health.py`).
   - Transactional session lifecycle (`get_db`) cleanup (`backend/tests/test_health.py`).
+  - Valid PDF, DOCX, and TXT upload processing (`backend/tests/test_document_upload.py`).
+  - Unsupported extension rejection (HTTP 400).
+  - Empty file rejection (0 bytes) (HTTP 400).
+  - Configurable upload size limit enforcement (HTTP 413).
+  - Deep magic-byte signature validation for PDF (`%PDF-`), DOCX (ZIP/Word XML), and TXT (null byte check & UTF-8 decoding).
+  - Safe filename sanitization and path traversal defense (`../../`, `..\..\`, control chars).
+  - Full attribute database persistence verification (`Document` model).
+  - Database failure handling with safe rollback and sanitized credential masking (HTTP 500).
+  - Live Supabase integration test (`test_live_supabase_document_persistence`).
 
 ---
 
@@ -118,7 +127,7 @@ KnowBridge AI has completed all foundational specification, system architecture,
 - **Dialect / Driver:** `postgresql+psycopg` (psycopg v3)
 - **Live Health Probe (`GET /health/db`):** Returns HTTP 200 `{"status": "healthy", "database": "connected"}`.
 - **Tables Inspected & Active in Supabase:**
-  - `documents`
+  - `documents` (verified: metadata records successfully inserted via Task 003A upload endpoint across PDF, DOCX, and TXT)
   - `document_versions`
   - `document_chunks`
   - `conversations`

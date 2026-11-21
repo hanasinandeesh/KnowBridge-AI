@@ -92,9 +92,9 @@
 ### Epic 3: FastAPI Application & Endpoints (Task 06)
 **Priority:** P0 | **Status:** Backlog | **Dependency:** Task 05
 
-- [ ] **STORY-601: Document Upload Multipart Endpoint (`POST /api/v1/documents/upload`)**
-  - **Acceptance Criteria:** Accepts multipart PDF, title, version, effective date, and initiates background ingestion job returning `job_id`.
-  - **Estimated Effort:** 45 mins
+- [x] **STORY-601: Document Upload Multipart Endpoint (`POST /api/v1/documents/upload`) [Task 003A Completed]**
+  - **Acceptance Criteria:** Accepts multipart PDF, DOCX, and TXT files, performs safe filename sanitization, extension validation, MIME validation, file signature validation, and creates initial document record with status `'uploaded'`. (Storage persistence and background ingestion jobs to be attached in Task 003B / Task 04).
+  - **Estimated Effort:** Completed
 
 - [ ] **STORY-602: Ingestion Job Polling Endpoint (`GET /api/v1/ingestion/{job_id}`)**
   - **Acceptance Criteria:** Returns real-time status (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`) and percentage progress.

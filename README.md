@@ -121,6 +121,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `GET` | `/health` | Core application health probe | `200 OK` |
 | `GET` | `/health/db` | Database connectivity verification (`SELECT 1`) | `200 OK` / `503 Unavailable` |
 | `GET` | `/api/v1/health` | Versioned API health check | `200 OK` |
+| `POST` | `/api/v1/documents/upload` | Multipart document upload & validation (PDF, DOCX, TXT) | `201 Created` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -152,17 +153,26 @@ KnowBridge-AI/
 │   ├── app/
 │   │   ├── api/
 │   │   │   └── routes/
-│   │   │       └── health.py       # Health check routes
+│   │   │       ├── health.py       # Health check routes
+│   │   │       └── documents.py    # Document upload & management routes
 │   │   ├── core/
 │   │   │   ├── config.py           # Pydantic v2 Settings & URI logic
 │   │   │   └── database.py         # SQLAlchemy engine, session & lifecycle
+│   │   ├── models/
+│   │   │   └── document.py         # SQLAlchemy Document model
+│   │   ├── schemas/
+│   │   │   └── document.py         # Pydantic request & response schemas
+│   │   ├── services/
+│   │   │   └── document_service.py # Validation & upload business logic
 │   │   └── main.py                 # FastAPI application entrypoint
 │   ├── migrations/                 # PostgreSQL DDL, HNSW index & functions
-│   ├── tests/                      # Automated test suite
+│   ├── tests/                      # Automated test suite (42 tests)
 │   ├── requirements.txt            # Python dependencies
 │   ├── .env.example                # Configuration template
 │   └── .gitignore
 ├── docs/                           # Architecture, DB design & data flows
+├── scripts/                        # Synthetic policy dataset generation
+├── synthetic-data/                 # Synthetic policy files (PDF, DOCX, TXT)
 ├── PRD.md                          # Product Requirements Document
 ├── TASKS.md                        # Implementation roadmap
 ├── current_status.md               # Current system health & progress report
@@ -179,4 +189,5 @@ KnowBridge-AI/
 - [x] **Task 02:** System Design, Low-Level Architecture & ADRs (001–010)
 - [x] **Task 02A:** Supabase PostgreSQL DDL, 7 MVP Tables, HNSW Index, Stored Procedure
 - [x] **Task 02B:** FastAPI & Supabase PostgreSQL Integration with SQLAlchemy 2.0 & psycopg 3
+- [x] **Task 003A:** Document Upload API, Multi-Tier Validation & Metadata Persistence
 - [ ] **Task 04:** Ingestion Engine & Document Processing Service *(Pending)*

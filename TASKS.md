@@ -2,7 +2,7 @@
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Architecture Lead:** Senior Software Architect & AI Engineer  
-**Status:** Task 02B Completed — Awaiting Approval for Task 04 (Document Ingestion Engine)  
+**Status:** Task 003A Completed — Ready for Task 003B / Task 04 (Document Ingestion Engine)  
 
 ---
 
@@ -51,7 +51,24 @@
   - [x] Provide `backend/.env.example` template with clean placeholder values
   - [x] Author automated test suite in `backend/tests/` (14 passing tests across configuration, error sanitization, health endpoints, and database execution)
   - [x] Live endpoint testing verified via FastAPI TestClient
-  - [x] Awaiting user approval before proceeding to Task 04 (Document Ingestion Engine)
+
+- [x] **TASK 003A — Document Upload API & Validation (Completed)**
+  - [x] Configure configurable upload limits in `config.py` (`MAX_UPLOAD_SIZE_BYTES=10MB`, `ALLOWED_FILE_EXTENSIONS={"pdf", "docx", "txt"}`)
+  - [x] Define SQLAlchemy `Document` model in `backend/app/models/document.py` matching existing Supabase schema
+  - [x] Define Pydantic `DocumentUploadResponse` schema in `backend/app/schemas/document.py`
+  - [x] Implement multi-tier validation service in `backend/app/services/document_service.py`:
+    - [x] Path traversal and unsafe filename sanitization (preventing null bytes, control chars, directory navigation)
+    - [x] Extension validation (.pdf, .docx, .txt)
+    - [x] Preliminary MIME-type verification
+    - [x] Empty file rejection (0 bytes) and configurable max size check (HTTP 413)
+    - [x] Deep magic-byte signature validation (PDF `%PDF-`, DOCX OpenXML zip container & Word XML, TXT UTF-8/ASCII without null bytes)
+  - [x] Implement transactional database persistence creating initial document record with status `'uploaded'` and unique `storage_path`
+  - [x] Ensure temporary binary content is safely discarded from memory after validation (Supabase storage upload deferred to Task 003B)
+  - [x] Implement `POST /api/v1/documents/upload` endpoint in `backend/app/api/routes/documents.py` returning HTTP 201 Created
+  - [x] Add `python-multipart>=0.0.9` to `backend/requirements.txt`
+  - [x] Author comprehensive automated test suite in `backend/tests/test_document_upload.py` (25 tests covering all 9 required scenarios with 100% pass rate)
+  - [x] Live Swagger UI & database verification confirmed (PDF, DOCX, TXT files successfully uploaded and stored)
+  - [x] Branch `feat/task-003a-document-upload-api` pushed to GitHub
 
 - [ ] **TASK 04 — Ingestion Engine & Document Processing Service (Pending Approval)**
   - [ ] Implement PyMuPDF (`fitz`) parser for layout, text, tables, and page tracking
@@ -73,7 +90,7 @@
   - [ ] Configure LangGraph Postgres checkpointer for conversation memory
 
 - [ ] **TASK 06 — FastAPI Application & API Endpoints**
-  - [ ] Implement `/api/v1/documents/upload` endpoint (multipart PDF upload)
+  - [x] Implement `/api/v1/documents/upload` endpoint (multipart PDF, DOCX, TXT upload - Completed in Task 003A)
   - [ ] Implement `/api/v1/ingestion/{job_id}` status polling endpoint
   - [ ] Implement `/api/v1/documents` listing endpoint
   - [ ] Implement `/api/v1/chat` conversational query endpoint
