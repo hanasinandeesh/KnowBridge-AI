@@ -81,6 +81,16 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION: int = 384
 
+    # Document Upload & Processing Settings (Task 003A)
+    MAX_UPLOAD_SIZE_BYTES: int = Field(
+        default=10 * 1024 * 1024,
+        description="Maximum allowed upload file size in bytes (default: 10MB)",
+    )
+    ALLOWED_FILE_EXTENSIONS: set[str] = Field(
+        default={"pdf", "docx", "txt"},
+        description="Allowed file extensions for document upload",
+    )
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE) if ENV_FILE.exists() else ".env",
         env_file_encoding="utf-8",

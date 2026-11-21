@@ -1,0 +1,168 @@
+================================================================================
+SYNTHETIC SAMPLE — FICTIONAL COMPANY — NOT AN ACTUAL CORPORATE POLICY
+This document is a synthetic artifact created solely for testing, evaluating,
+and benchmarking the KnowBridge AI enterprise RAG platform.
+All operational rules, numerical thresholds, names, and entities are fictional.
+================================================================================
+
+NORTHSTAR TECHNOLOGIES INDIA PVT. LTD.
+DOCUMENT ID:    HR-PER-001
+POLICY TITLE:   PERFORMANCE MANAGEMENT AND ANNUAL APPRAISAL POLICY
+VERSION:        1.0
+DOCUMENT STATUS:CURRENT
+EFFECTIVE DATE: 01 April 2025
+REVIEW DATE:    31 March 2027
+POLICY OWNER:   Head – Total Rewards & Performance Excellence
+APPROVING AUTH: Executive Committee & Chief Executive Officer (CEO)
+CLASSIFICATION: Internal Corporate Policy — Restricted
+TARGET AUDIENCE:All regular full-time employees having completed minimum 90 days continuous service
+--------------------------------------------------------------------------------
+
+1.0 DOCUMENT CONTROL AND INTRODUCTION
+-------------------------------------
+
+  This policy defines the philosophy, cycle timelines, goal-setting methodologies, rating scales, promotion guidelines, and performance improvement frameworks at Northstar Technologies India Pvt. Ltd. ('Northstar').
+
+  Status: CURRENT. Effective 01 April 2025.
+
+
+2.0 PURPOSE, SCOPE AND ELIGIBILITY
+----------------------------------
+
+  * Performance Philosophy: Northstar believes in continuous, transparent, and meritocratic performance enablement. Our evaluation system balances quantifiable business impact (Objectives & Key Results - OKRs) with behavioral values, mentorship, and leadership contributions.
+
+  * Scope and Applicability: Applies to all regular full-time employees across all engineering, product, corporate, and support functions in Bengaluru, Hyderabad, Pune, and Chennai.
+
+  * Eligibility Threshold: Employees must have completed a minimum of ninety (90) calendar days of continuous active service within Northstar prior to 31 March of the evaluating fiscal year to participate in the formal annual cycle. Employees joining after 31 December undergo prorated reviews.
+
+  * Exclusions: External independent consultants, contingent workers on third-party vendor contracts, and academic interns are excluded from the annual appraisal process.
+
+
+3.0 APPRAISAL CYCLE AND TIMELINES
+---------------------------------
+
+  The Northstar performance management cycle operates on an annual fiscal calendar from 01 April to 31 March:
+
+  * Goal Setting & OKR Alignment: 01 April to 30 April. Employees and managers define annual OKRs in the HRMS.
+
+  * Mid-Year Progress Check: 01 October to 31 October. Formal mid-year check-in to calibrate goals, provide qualitative feedback, and identify skill gaps.
+
+  * Annual Self-Appraisal: 15 March to 31 March. Employees complete self-evaluation and log deliverable achievements.
+
+  * Manager Evaluation & Calibration: 01 April to 20 April. Managers review ratings, followed by cross-departmental calibration committee sessions.
+
+  * Feedback Conversations & Compensation Letters: 01 May to 15 May. Managers conduct one-on-one appraisal discussions; revised compensation structures take effect from 01 April retrospectively.
+
+
+4.0 GOAL SETTING FRAMEWORK (OKRS)
+---------------------------------
+
+  All performance goals must be structured using the SMART framework (Specific, Measurable, Achievable, Relevant, Time-bound):
+
+  * Technical & Business Deliverables (Weightage: 70%): Sprint velocity, project milestones, code quality metrics, customer satisfaction (CSAT), architectural innovations, or revenue targets.
+
+  * Organizational Values & Competencies (Weightage: 30%): Collaboration, adherence to security standards, mentoring junior engineers, participating in recruitment drives, and knowledge sharing.
+
+
+5.0 FIVE-POINT RATING SCALE AND DISTRIBUTION GUIDELINES
+-------------------------------------------------------
+
+  Northstar utilizes a 5-point performance rating scale calibrated across functional business units:
+
+    Rating Level  Rating Descriptor                Performance Definition                                                                                                              Target Distribution Curve
+    ------------  -------------------------------  ----------------------------------------------------------------------------------------------------------------------------------  -------------------------
+    5             Far Exceeds Expectations         Consistently demonstrates transformational business impact; recognized domain authority; flawless execution far beyond role scope.  Top 10%                  
+    4             Exceeds Expectations             Regularly surpasses assigned deliverables; proactive problem solver; demonstrates superior leadership and high technical quality.   Next 25%                 
+    3             Successfully Meets Expectations  Consistently meets all core role requirements; reliable delivery; strong collaborator adhering to all quality standards.            Core 55%                 
+    2             Needs Improvement                Inconsistently meets deliverables; requires frequent supervision; missed key project deadlines or demonstrated competency gaps.     Bottom 8%                
+    1             Unsatisfactory                   Consistently fails to meet essential job duties; persistent quality defects; lack of engagement or non-compliance with standards.   Bottom 2%                
+
+
+6.0 PROMOTION ELIGIBILITY CRITERIA
+----------------------------------
+
+  Employees considered for vertical promotion must satisfy the following baseline prerequisites:
+
+  * Minimum Tenure: At least twelve (12) months in their current role/band at Northstar.
+
+  * Rating Track Record: Must achieve a rating of '4' (Exceeds) or '5' (Far Exceeds) in the immediate preceding appraisal cycle, with no rating below '3' in the last two years.
+
+  * Leadership Endorsement: Formal nomination by the Delivery Unit Head and Director (Band L6).
+
+  * Band L5+ Elevations: Elevations to Principal Engineer, Engineering Manager, or Director require presentation before the Corporate Promotion Panel.
+
+
+7.0 PERFORMANCE IMPROVEMENT PLAN (PIP) WORKFLOW
+-----------------------------------------------
+
+  * Trigger Criteria: Any employee receiving an annual rating of '1' (Unsatisfactory) or two consecutive ratings of '2' (Needs Improvement) is automatically placed on a formal PIP.
+
+  * PIP Duration: Exactly sixty (60) calendar days from the date of formal PIP notice issuance.
+
+  * Structure: The Line Manager and HR People Partner draft an itemized PIP document detailing specific deliverables, measurable quality targets, and required training resources.
+
+  * Review Cadence: Bi-weekly formal milestone review meetings documented in writing.
+
+  * Outcomes: If the employee satisfies all PIP criteria, they are restored to good standing. If the employee fails to meet the documented criteria at the end of 60 days, their employment is formally separated on grounds of performance incapability with contractual severance.
+
+
+8.0 APPEALS AND GRIEVANCE PROCESS
+---------------------------------
+
+  If an employee believes their final appraisal rating was assigned arbitrarily, discriminatorily, or in violation of documented achievements, they may submit a formal written appeal to HR Operations (performance-appeals@northstar-tech.internal) within ten (10) business days of receiving their appraisal letter.
+
+  An independent Appeals Committee comprising a neutral Band L6 Director, HR Head, and VP will review the submission and issue a binding resolution within fifteen (15) business days.
+
+
+9.0 ROLES AND RESPONSIBILITIES
+------------------------------
+
+  * Appraisee / Employee: Responsible for defining SMART OKRs by 30 April, conducting periodic progress tracking, preparing comprehensive self-evaluations with concrete evidence, and participating constructively in appraisal dialogs.
+
+  * Appraising Manager: Responsible for providing ongoing objective feedback, evaluating performance against agreed OKRs, participating in calibration sessions, drafting structured PIPs when necessary, and conducting one-on-one appraisal conversations.
+
+  * Reviewer / Department Head (Band L6+): Responsible for ensuring rating parity across reporting teams, managing unit-level bell curve distribution, endorsing promotion dossiers, and reviewing PIP progression.
+
+  * Total Rewards & Talent Management Lead: Responsible for corporate-wide appraisal orchestration, administering calibration panels, auditing merit increase matrices, and handling formal appraisal grievance escalations.
+
+
+10.0 EXCEPTIONS AND SPECIAL APPRAISAL CIRCUMSTANCES
+---------------------------------------------------
+
+  * Extended Leave During Appraisal Cycle: Employees on approved maternity, paternity, or medical leave exceeding ninety (90) cumulative days during the cycle receive a normalized appraisal score based on their active service period, benchmarking against their preceding performance record.
+
+  * Mid-Year Inter-Departmental Transfers: For employees transitioning teams mid-cycle, both current and prior reporting managers must contribute weighted scores proportional to months spent in each role.
+
+  * Bell Curve Distribution Quota Exceptions: Any departmental proposal to deviate from the mandated rating distribution (e.g. allocating more than 10% to Rating 5) requires formal written justification submitted to the Calibration Panel and approval by the CPO and CEO.
+
+  * Accelerated Out-of-Cycle Promotions: Extraordinary fast-track promotions outside the annual appraisal cycle require documented sponsorship from the Department VP and approval from the Executive Committee.
+
+
+11.0 FREQUENTLY ASKED QUESTIONS
+-------------------------------
+
+  Q: What is the duration of a formal Performance Improvement Plan (PIP)?
+  A: Under Section 7, a formal PIP lasts exactly sixty (60) calendar days, featuring bi-weekly documented progress check-ins with the Line Manager and HR.
+
+  Q: What rating is required to be eligible for a corporate promotion?
+  A: An employee must receive a rating of 4 (Exceeds Expectations) or 5 (Far Exceeds Expectations) in the immediate appraisal cycle, have a minimum of 12 months tenure in their current band, and have no rating below 3 in the last two years.
+
+  Q: Can an employee appeal their final appraisal rating?
+  A: Yes. An employee may submit a formal appeal within ten (10) business days of receiving their rating to performance-appeals@northstar-tech.internal. The Appeals Committee responds within 15 business days.
+
+  Q: What happens if an employee fails a 60-day PIP?
+  A: If the employee fails to achieve the documented PIP deliverables, their employment is formally terminated due to performance incapability, subject to contractual notice or severance.
+
+
+12.0 REVISION HISTORY
+---------------------
+
+    Version  Effective Date  Status   Summary of Primary Changes                                                                                                                             
+    -------  --------------  -------  -------------------------------------------------------------------------------------------------------------------------------------------------------
+    1.0      01 April 2025   CURRENT  Standardized annual appraisal cycle, 5-point rating scale with target bell curve, promotion criteria, 60-day PIP framework, and formal appeals process.
+
+
+================================================================================
+END OF POLICY DOCUMENT — NORTHSTAR TECHNOLOGIES INDIA PVT. LTD.
+SYNTHETIC SAMPLE — FICTIONAL COMPANY — NOT AN ACTUAL CORPORATE POLICY
+================================================================================

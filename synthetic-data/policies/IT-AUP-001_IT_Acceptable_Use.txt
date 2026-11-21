@@ -1,0 +1,170 @@
+================================================================================
+SYNTHETIC SAMPLE — FICTIONAL COMPANY — NOT AN ACTUAL CORPORATE POLICY
+This document is a synthetic artifact created solely for testing, evaluating,
+and benchmarking the KnowBridge AI enterprise RAG platform.
+All operational rules, numerical thresholds, names, and entities are fictional.
+================================================================================
+
+NORTHSTAR TECHNOLOGIES INDIA PVT. LTD.
+DOCUMENT ID:    IT-AUP-001
+POLICY TITLE:   IT ACCEPTABLE USE POLICY
+VERSION:        1.0
+DOCUMENT STATUS:CURRENT
+EFFECTIVE DATE: 01 April 2025
+REVIEW DATE:    31 March 2027
+POLICY OWNER:   Head of IT Infrastructure & Cloud Services
+APPROVING AUTH: Chief Technology Officer (CTO) & CISO
+CLASSIFICATION: Internal Corporate Policy — Restricted
+TARGET AUDIENCE:All users of Northstar digital hardware, networks, cloud workspaces, and email systems
+--------------------------------------------------------------------------------
+
+1.0 DOCUMENT CONTROL AND INTRODUCTION
+-------------------------------------
+
+  This policy defines the acceptable, responsible, and secure use of all Information Technology (IT) assets, computer equipment, network resources, internet access, and communication channels provided by Northstar Technologies India Pvt. Ltd. ('Northstar').
+
+  Status: CURRENT. Effective 01 April 2025, reviewed every two years.
+
+
+2.0 PURPOSE AND SCOPE
+---------------------
+
+  * Policy Purpose: To ensure corporate computing assets and digital resources are used productively, ethically, and securely, preventing cybersecurity breaches, data theft, and legal liability while providing a reliable digital workplace.
+
+  * Scope and Applicability: Applies to all permanent full-time employees, contractors, consultants, interns, and third-party vendor personnel accessing Northstar networks, cloud systems, and company-issued hardware across Bengaluru, Hyderabad, Pune, and Chennai.
+
+  * Systems Covered: All enterprise laptops, workstations, mobile devices, corporate email, Slack/Teams workspaces, VPNs, internal code repositories (GitLab/GitHub Enterprise), and cloud services.
+
+
+3.0 OWNERSHIP OF COMPUTING RESOURCES AND DATA
+---------------------------------------------
+
+  All computing equipment (laptops, desktops, monitors, peripherals), software licenses, network bandwidth, corporate email accounts (name@northstar-tech.internal), collaboration channels (Slack, Microsoft Teams), and data stored thereon remain the exclusive property of Northstar.
+
+  Employees have no expectation of personal privacy regarding any communications, files, or internet traffic transmitted across or stored on corporate assets.
+
+
+4.0 ACCEPTABLE PERSONAL USE CLAUSE
+----------------------------------
+
+  Northstar recognizes that employees may occasionally need to attend to urgent personal matters during business hours.
+
+  Incidental, reasonable personal use of company laptops and internet (e.g., brief personal email checking, reading news, online banking) is permitted provided it:
+
+  * Occurs during designated rest breaks or outside core working hours.
+
+  * Does not consume excessive network bandwidth (e.g., video streaming, gaming).
+
+  * Does not interfere with job productivity or team obligations.
+
+  * Does not involve commercial side ventures, freelancing, or secondary employment.
+
+  * Does not violate any provisions of the Code of Conduct or InfoSec Policy.
+
+
+5.0 STRICTLY PROHIBITED ACTIVITIES
+----------------------------------
+
+  Users are strictly prohibited from engaging in the following actions using Northstar assets or networks:
+
+  * Accessing, downloading, storing, or transmitting pornographic, sexually explicit, obscene, racist, or defamatory material.
+
+  * Peer-to-peer (P2P) file sharing, torrenting, or downloading pirated software, movies, music, or media.
+
+  * Engaging in unauthorized cryptocurrency mining or distributed ledger computation.
+
+  * Running network sniffing, port scanning, password cracking, or penetration testing tools without written CISO authorization.
+
+  * Jailbreaking, rooting, or disabling operating system security controls, antivirus, or Mobile Device Management (MDM) agents.
+
+  * Disclosing company intellectual property, customer data, or internal source code on public forums, pastebins, or unapproved AI platforms.
+
+
+6.0 SOFTWARE INSTALLATION AND ADMINISTRATIVE PRIVILEGES
+-------------------------------------------------------
+
+  * Standard User Rights: By default, standard employee accounts do not possess local administrative privileges on corporate laptops.
+
+  * Software Requests: Employees requiring specific engineering tools, libraries, or development software not available in the Northstar Software Center must submit an IT Jira Service Management request.
+
+  * Unauthorized Software: Downloading or installing unlicensed, open-source with restrictive licenses (e.g., AGPL in proprietary client code), or unauthorized freeware is strictly forbidden.
+
+
+7.0 NETWORK AND ACTIVITY MONITORING DISCLOSURE
+----------------------------------------------
+
+  To ensure regulatory compliance, protect intellectual property, and defend against cyber attacks, Northstar actively monitors and logs:
+
+  * Web browsing activity, URLs visited, and categorized web filtering blocks.
+
+  * Inbound and outbound email communications, attachments, and data transfer volumes.
+
+  * Endpoint telemetry, installed processes, CPU utilization, and software installations.
+
+  * Authentication attempts, VPN connections, and geo-location access points.
+
+  Monitoring is conducted in compliance with applicable Indian laws (Information Technology Act, 2000, and SPDI Rules).
+
+
+8.0 PROCEDURES AND HARDWARE LIFECYCLE WORKFLOWS
+-----------------------------------------------
+
+  * Hardware Requisition: Requisitions for replacement laptops, additional monitors, or specialized peripherals must be initiated via Jira Service Management with Line Manager approval.
+
+  * Lost or Damaged Hardware Protocol: In the event of lost, stolen, or damaged assets, the user must notify it-helpdesk@northstar-tech.internal within two (2) hours to trigger remote locking. For stolen devices, a police First Information Report (FIR) must be filed within 24 hours.
+
+  * Mandatory Asset Return on Separation: On the employee's final working day, all issued hardware, chargers, security keys, and access badges must be surrendered to the IT Facility Desk before final exit clearance is signed off.
+
+
+9.0 ROLES AND RESPONSIBILITIES
+------------------------------
+
+  * End-User / Employee: Responsible for exercising due care with assigned digital hardware, adhering to software installation restrictions, operating under secure VPN when remote, and maintaining workstation confidentiality.
+
+  * Reporting Manager / Supervisor: Responsible for reviewing software entitlement requests, monitoring employee adherence to acceptable use standards, and validating equipment requirements during onboarding and offboarding.
+
+  * IT Service Desk & Infrastructure Operations: Responsible for provisioning standardized system images, managing automated software patch distribution, executing timely hardware repairs within 48 hours, and maintaining asset inventory.
+
+  * CISO & Corporate Security: Responsible for defining network access rules, conducting audit telemetry reviews, and investigating acceptable use policy violations.
+
+
+10.0 POLICY EXCEPTIONS AND ACCESS WAIVERS
+-----------------------------------------
+
+  * Temporary Local Admin Exemption: Developers requiring temporary local administrative access for kernel debugging or system tool builds may request a Time-Bound Admin Waiver (maximum 30 days) via Jira Service Management, subject to approval from the Engineering Director and CISO.
+
+  * USB Read/Write Access Waiver: Permanent USB port blocking may only be bypassed for specialized testing labs through a written sole-purpose waiver signed by the IT Infrastructure Head.
+
+  * AI Tool Usage Exception: Utilizing commercial generative AI platforms with corporate source code requires a Formal Enterprise AI License and written authorization from the CISO.
+
+  * Exception Log & Revocation: All granted exceptions are logged in the Central Access Register and subject to immediate revocation upon security advisory.
+
+
+11.0 FREQUENTLY ASKED QUESTIONS
+-------------------------------
+
+  Q: Can I install personal software or games on my Northstar laptop?
+  A: No. Employees do not have local administrative privileges, and installing personal games, torrent clients, or unauthorized applications is strictly prohibited.
+
+  Q: Does Northstar monitor my internet browsing on company laptops?
+  A: Yes. Corporate laptops route traffic through corporate proxies and endpoint monitoring tools. All web activity and data transfers are logged for cybersecurity compliance.
+
+  Q: How quickly must I report a lost company laptop?
+  A: You must report a lost or stolen laptop to it-helpdesk@northstar-tech.internal within two (2) hours of discovering the loss.
+
+  Q: Can I use my company laptop to do freelance software projects in the evening?
+  A: No. Using corporate equipment for commercial side ventures or freelancing is strictly prohibited and constitutes grounds for termination under the Code of Conduct.
+
+
+12.0 REVISION HISTORY
+---------------------
+
+    Version  Effective Date  Status   Summary of Primary Changes                                                                                                             
+    -------  --------------  -------  ---------------------------------------------------------------------------------------------------------------------------------------
+    1.0      01 April 2025   CURRENT  Baseline IT Acceptable Use Policy covering hardware ownership, prohibited activities, software installation, and monitoring disclosure.
+
+
+================================================================================
+END OF POLICY DOCUMENT — NORTHSTAR TECHNOLOGIES INDIA PVT. LTD.
+SYNTHETIC SAMPLE — FICTIONAL COMPANY — NOT AN ACTUAL CORPORATE POLICY
+================================================================================
