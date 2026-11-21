@@ -42,6 +42,11 @@ def get_engine_args(uri: str) -> dict:
     """Determines appropriate engine arguments based on dialect."""
     if "sqlite" in uri:
         return {"connect_args": {"check_same_thread": False}}
+    connect_args = {
+        "connect_timeout": settings.DB_CONNECT_TIMEOUT,
+    }
+    if "supabase" in uri and "sslmode" not in uri:
+        connect_args["sslmode"] = "require"
     return {
         "pool_pre_ping": True,
         "pool_size": settings.DB_POOL_SIZE,
@@ -49,9 +54,7 @@ def get_engine_args(uri: str) -> dict:
         "pool_recycle": settings.DB_POOL_RECYCLE,
         "pool_timeout": settings.DB_POOL_TIMEOUT,
         "echo": settings.DB_ECHO,
-        "connect_args": {
-            "connect_timeout": settings.DB_CONNECT_TIMEOUT,
-        },
+        "connect_args": connect_args,
     }
 
 
