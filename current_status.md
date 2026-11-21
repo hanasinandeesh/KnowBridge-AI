@@ -94,12 +94,14 @@ KnowBridge AI has completed all foundational specification, system architecture,
 ## 5. Test Suite Verification Metrics
 
 - **Test Runner:** `pytest 9.1.1`
-- **Total Tests:** 14 automated unit and integration tests.
-- **Pass Rate:** 100% (14 passed in 4.87s).
+- **Total Tests:** 17 automated unit and integration tests.
+- **Pass Rate:** 100% (17 passed in 2.40s).
 - **Coverage Areas:**
   - Configuration defaults and environment overrides (`backend/tests/test_config.py`).
   - Driver URI normalization and dialect conversion (`backend/tests/test_config.py`).
   - Plaintext credential redaction in telemetry properties (`backend/tests/test_config.py`).
+  - Graceful fallback when `DATABASE_URL` has placeholder text (`backend/tests/test_config.py`).
+  - Special character URL-encoding in database passwords (`backend/tests/test_config.py`).
   - Application health checks (`backend/tests/test_health.py`).
   - Database connectivity probe with `SELECT 1` scalar resolution (`backend/tests/test_health.py`).
   - Degraded connection handling and 503 status code response (`backend/tests/test_health.py`).
@@ -108,13 +110,21 @@ KnowBridge AI has completed all foundational specification, system architecture,
 
 ---
 
-## 6. Supabase Connectivity Note
+## 6. Supabase Live Connectivity Verification
 
-The application is fully wired for database connectivity. In `backend/.env`, replace the placeholder password with your production Supabase database password:
-- **Direct Connection Endpoint (Confirmed Reachable on Port 5432):**
-  `DATABASE_URL=postgresql+psycopg://postgres:[YOUR_PASSWORD]@db.iwwleppesznhdecsickr.supabase.co:5432/postgres`
-- **Transaction Pooler Endpoint (Confirmed Reachable on Port 6543):**
-  `DATABASE_URL=postgresql+psycopg://postgres.iwwleppesznhdecsickr:[YOUR_PASSWORD]@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres`
+- **Status:** **VERIFIED (HEALTHY, 200 OK)**
+- **Host:** `aws-1-ap-southeast-2.pooler.supabase.com` (Port 5432, Session Pooler)
+- **Database:** `postgres`
+- **Dialect / Driver:** `postgresql+psycopg` (psycopg v3)
+- **Live Health Probe (`GET /health/db`):** Returns HTTP 200 `{"status": "healthy", "database": "connected"}`.
+- **Tables Inspected & Active in Supabase:**
+  - `documents`
+  - `document_versions`
+  - `document_chunks`
+  - `conversations`
+  - `messages`
+  - `user_memories`
+  - `ingestion_jobs`
 
 ---
 
