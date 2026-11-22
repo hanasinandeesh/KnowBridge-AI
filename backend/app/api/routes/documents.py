@@ -15,6 +15,7 @@ from app.schemas.chunking import DocumentChunkingResult
 from app.schemas.document import DocumentUploadResponse
 from app.schemas.embedding import DocumentEmbeddingResult
 from app.schemas.extraction import DocumentExtractionResult
+from app.schemas.persistence import DocumentPersistenceResponse
 from app.services.document_chunker import (
     DocumentChunkerService,
     get_document_chunker,
@@ -28,6 +29,14 @@ from app.services.embedding_service import (
     EmbeddingError,
     EmbeddingService,
     get_embedding_service,
+)
+from app.services.chunk_persistence import (
+    AlignmentError,
+    ChunkPersistenceService,
+    DocumentVersionResolutionError,
+    EmbeddingValidationError,
+    PersistenceError,
+    get_chunk_persistence_service,
 )
 from app.services.document_service import (
     create_document_record,
@@ -545,5 +554,156 @@ async def embed_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Embedding generation failed: {sanitized_err}",
         )
+
+
+@router.post(
+    "/{document_id}/persist",
+    response_model=DocumentPersistenceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Persist Extracted Chunks and 384D Embeddings",
+    description=(
+        "Executes end-to-end extraction (Task 003C), chunking (Task 003D), and embedding generation (Task 003E), "
+        "and persists the resulting chunks with their 384-dimensional dense vectors into the Supabase PostgreSQL "
+        "'document_chunks' table using pgvector and SQLAlchemy (Task 003F). "
+        "Ensures document version association, idempotency via atomic transaction replacement, and ingestion job tracking."
+    ),
+)
+async def persist_document_chunks(
+    document_id: uuid.UUID,
+    chunk_size: Optional[int] = Query(
+        None,
+        gt=0,
+        le=10000,
+        description="Chunk size in characters (defaults to system settings if omitted)",
+    ),
+    chunk_overlap: Optional[int] = Query(
+        None,
+        ge=0,
+        le=2000,
+        description="Chunk overlap in characters (defaults to system settings if omitted)",
+    ),
+    batch_size: Optional[int] = Query(
+        None,
+        gt=0,
+        le=512,
+        description="Batch size for generating embeddings (defaults to system settings if omitted)",
+    ),
+    version_label: Optional[str] = Query(
+        None,
+        description="Explicit document version label (e.g. '1.0', 'v2.0'). If omitted, safely resolved from document metadata.",
+    ),
+    db: Session = Depends(get_db),
+    storage: StorageService = Depends(get_storage_service),
+    extractor: DocumentExtractorService = Depends(get_document_extractor),
+    chunker: DocumentChunkerService = Depends(get_document_chunker),
+    embedder: EmbeddingService = Depends(get_embedding_service),
+    persistence: ChunkPersistenceService = Depends(get_chunk_persistence_service),
+) -> DocumentPersistenceResponse:
+    """
+    Coordinates end-to-end extraction, chunking, embedding, and database persistence:
+    1. Verifies document exists in PostgreSQL.
+    2. Validates chunk overlap strictly < chunk size.
+    3. Retrieves binary from Supabase Storage and parses structured text units.
+    4. Resolves or creates the appropriate DocumentVersion record.
+    5. Transforms structured units into deterministic DocumentChunks.
+    6. Generates 384-dimensional normalized vector embeddings.
+    7. Atomically persists chunks into PostgreSQL using pgvector VECTOR(384).
+    8. Records ingestion job status and returns structured persistence summary.
+    """
+    logger.info(
+        "Received chunk and embedding persistence request for document_id: %s (chunk_size=%s, chunk_overlap=%s, batch_size=%s, version_label=%s)",
+        document_id,
+        chunk_size,
+        chunk_overlap,
+        batch_size,
+        version_label,
+    )
+
+    # 1. Parameter validation
+    eff_size = chunk_size if chunk_size is not None else chunker.default_chunk_size
+    eff_overlap = chunk_overlap if chunk_overlap is not None else chunker.default_chunk_overlap
+    if eff_overlap >= eff_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"chunk_overlap ({eff_overlap}) must be strictly less than chunk_size ({eff_size}).",
+        )
+
+    try:
+        response = await persistence.persist_document(
+            db=db,
+            document_id=document_id,
+            storage=storage,
+            extractor=extractor,
+            chunker=chunker,
+            embedder=embedder,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            batch_size=batch_size,
+            version_label=version_label,
+        )
+        return response
+
+    except DocumentNotFoundError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.warning("Persistence rejected: document not found: %s", sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=sanitized_err,
+        )
+    except StorageDownloadError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Storage download failure during persistence of %s: %s", document_id, sanitized_err)
+        if "not found" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Original document binary not found in storage: {sanitized_err}",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to retrieve document binary from storage service.",
+        )
+    except CorruptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Corrupted document %s during persistence: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except EncryptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.warning("Password-protected document %s during persistence: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except UnsupportedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Unsupported document format for %s: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported document format: {sanitized_err}",
+        )
+    except (EmbeddingValidationError, AlignmentError, DocumentVersionResolutionError) as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Validation error during persistence of %s: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=sanitized_err,
+        )
+    except EmbeddingError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Embedding generation failure during persistence of %s: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Embedding generation failed: {sanitized_err}",
+        )
+    except PersistenceError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Database persistence failure for document %s: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database persistence failed: {sanitized_err}",
+        )
+
 
 

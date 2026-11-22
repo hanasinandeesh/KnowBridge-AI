@@ -60,8 +60,22 @@
     - Sanitizes logs preventing secret token exposure.
   - **Estimated Effort:** Completed
 
-- [ ] **STORY-405: Asynchronous Ingestion Job Coordinator**
-  - **Description:** Implement background worker inserting chunks into `document_chunks` and updating `ingestion_jobs` status (`PENDING` -> `PROCESSING` -> `COMPLETED`/`FAILED`).
+- [x] **STORY-405: PostgreSQL pgvector Chunk & Embedding Database Persistence [Task 003F Completed]**
+  - **Description:** Implement `backend/app/services/chunk_persistence.py` persisting structure-aware chunks and 384-dimensional dense vectors into Supabase PostgreSQL `document_chunks` table via `pgvector`.
+  - **Acceptance Criteria:**
+    - Uses existing `pgvector.sqlalchemy.Vector(384)` and HNSW index `idx_chunks_embedding`.
+    - Document version resolution: checks active `is_current`, extracts version from filename/text, creates initial version safely without inventing dates.
+    - Preserves 1-based PDF physical pages; enforces `page_number=None` for DOCX and TXT.
+    - Preserves complete chunk text, section hierarchy, unit indices, character count, and custom metadata.
+    - Idempotent single-transaction chunk replacement for reprocessed versions.
+    - Rollback safety ensuring zero partial chunk records on failure.
+    - Updates `ingestion_jobs` status (`pending` -> `processing` -> `completed`/`failed`).
+    - Endpoint `POST /api/v1/documents/{document_id}/persist` exposes end-to-end persistence.
+    - 22 automated tests passing with 100% pass rate.
+  - **Estimated Effort:** Completed
+
+- [ ] **STORY-406: Asynchronous Ingestion Job Coordinator [Task 003G Ready]**
+  - **Description:** Implement background worker and orchestrator automating the full upload -> extraction -> chunking -> embedding -> persistence pipeline with job status polling endpoint `GET /api/v1/ingestion/{job_id}`.
   - **Acceptance Criteria:**
     - Tracks `processed_pages` against `total_pages`.
     - Captures detailed sanitized error messages upon ingestion failure.

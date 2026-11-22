@@ -144,7 +144,7 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes 137 passing automated tests across 139 test cases (100% pass rate):
+Test coverage includes 159 passing automated tests across 161 test cases (100% pass rate):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
@@ -182,6 +182,11 @@ Test coverage includes 137 passing automated tests across 139 test cases (100% p
 - Strict validation rejecting malformed chunks, empty text, unexpected dimensions, or non-finite values (`NaN`/`Inf`).
 - Symmetrical search query embedding (`embed_query`) sharing identical model and normalization strategy.
 - Document embedding REST API endpoint (`POST /api/v1/documents/{document_id}/embed`).
+- Document chunk and 384D embedding persistence into Supabase PostgreSQL `document_chunks` table via `pgvector.sqlalchemy.Vector(384)`.
+- Safe document version resolution (`DocumentVersion`), active version detection (`is_current`), and safe date handling without inventing data.
+- Idempotent reprocessing via atomic single-transaction deletion and replacement of chunks for a version.
+- Ingestion job lifecycle tracking (`IngestionJob`) across `pending`, `processing`, `completed`, and `failed` states.
+- Document persistence REST API endpoint (`POST /api/v1/documents/{document_id}/persist`).
 
 ---
 
@@ -254,4 +259,6 @@ KnowBridge-AI/
 - [x] **Task 003B:** Supabase Storage Integration, Deterministic Paths & Compensating Cleanup
 - [x] **Task 003C:** Document Text Extraction Service (PyMuPDF, python-docx, UTF-8 BOM, Supabase Download)
 - [x] **Task 003D:** Intelligent Document Chunking Service (Structure-Aware, Heading Hierarchy, Table Splitting, 117 Tests)
-- [ ] **Task 003E:** Embeddings Generation Engine *(Pending)*
+- [x] **Task 003E:** Embeddings Generation Engine (all-MiniLM-L6-v2, 384d Normalized Vectors, 137 Tests)
+- [x] **Task 003F:** PostgreSQL pgvector Chunk Persistence (pgvector, Document Versions, Single-Transaction Idempotency, 159 Tests)
+- [ ] **Task 003G:** End-to-End Ingestion Pipeline Orchestration *(Ready)*

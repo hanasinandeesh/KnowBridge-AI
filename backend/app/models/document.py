@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Column, DateTime, Text, Uuid, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -79,6 +80,20 @@ class Document(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="Timestamp when document record was last updated",
+    )
+
+    # Relationships
+    versions = relationship(
+        "DocumentVersion",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="desc(DocumentVersion.created_at)",
+    )
+    ingestion_jobs = relationship(
+        "IngestionJob",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="desc(IngestionJob.created_at)",
     )
 
     def __repr__(self) -> str:

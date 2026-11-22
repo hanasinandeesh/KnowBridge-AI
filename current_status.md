@@ -3,7 +3,7 @@
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Report Date:** November 22, 2026  
 **Engineering Lead:** Senior Python Backend Engineer & AI Architect  
-**Current Milestone:** Task 003C Completed — Ready for Task 003D / Task 04 (Chunking & Embeddings)  
+**Current Milestone:** Task 003F Completed — Ready for Task 003G / Task 04 (Ingestion Orchestration)  
 
 ---
 
@@ -28,7 +28,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 003C: Document Text Extraction Service            │ COMPLETED   │ Parsers, 90 tests, Live   │
 │ TASK 003D: Intelligent Document Chunking Service       │ COMPLETED   │ Chunker, 117 tests, Live  │
 │ TASK 003E: Embeddings Generation Service (MiniLM)      │ COMPLETED   │ 137 tests, Live Real-Model│
-│ TASK 003F: PostgreSQL pgvector Chunk Persistence       │ READY       │ Awaiting User Approval    │
+│ TASK 003F: PostgreSQL pgvector Chunk Persistence       │ COMPLETED   │ 159 tests, Live Supabase  │
+│ TASK 003G: End-to-End Ingestion Orchestrator           │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
 │ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
@@ -103,6 +104,10 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │                                       │        │              │ structured text, 1-based PDF pages & DOCX/TXT units.   │
 │ /api/v1/documents/{id}/chunk          │ POST   │ 200 OK       │ Structure-aware chunking preserving section hierarchy, │
 │                                       │        │              │ provenance, table layouts, and 1-based PDF pages.      │
+│ /api/v1/documents/{id}/embed          │ POST   │ 200 OK       │ Generates 384-dimensional dense MiniLM vector          │
+│                                       │        │              │ embeddings preserving full provenance metadata.        │
+│ /api/v1/documents/{id}/persist        │ POST   │ 200 OK       │ Extracts, chunks, embeds, and persists into Supabase   │
+│                                       │        │              │ PostgreSQL document_chunks table with pgvector (384d). │
 │ /                                     │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
 └───────────────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
@@ -111,10 +116,16 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 
 ## 5. Test Suite Verification Metrics
 
-- **Test Runner:** `pytest 9.1.1` (in `backend/.venv`)
-- **Total Tests:** 119 automated tests (117 automated unit/API tests + 2 opt-in live integration tests).
-- **Pass Rate:** 100% (117 passed in 2.34s).
+- **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
+- **Total Tests:** 161 automated tests (159 passed + 2 opt-in live integration tests).
+- **Pass Rate:** 100% (159 passed in 16.19s).
 - **Coverage Areas:**
+  - Database persistence of chunks and pgvector embeddings (`backend/tests/test_chunk_persistence.py`).
+  - Document version association, safe version resolution, and idempotency (`test_chunk_persistence.py`).
+  - Single-transaction atomic replacement and rollback verification (`test_chunk_persistence.py`).
+  - 384-dimensional vector validation and non-finite value rejection (`test_chunk_persistence.py`).
+  - PDF 1-based page numbers vs DOCX/TXT `page_number=None` enforcement (`test_chunk_persistence.py`).
+  - Ingestion job state machine transitions and credential-redacted failure messages (`test_chunk_persistence.py`).
   - Multi-page PDF extraction with 1-based page numbering (`backend/tests/test_document_extractor.py`).
   - Scanned PDF detection with zero extractable text (`ocr_supported=False`, `empty_content`).
   - Intelligent document chunking across PDF, DOCX, TXT formats (`backend/tests/test_document_chunker.py`).
