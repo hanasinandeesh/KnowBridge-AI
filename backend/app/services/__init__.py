@@ -8,6 +8,16 @@ from app.services.document_service import (
     validate_file_size,
     validate_mime_type,
 )
+from app.services.storage_service import (
+    StorageConfigurationError,
+    StorageDeleteError,
+    StorageError,
+    StorageService,
+    StorageUploadError,
+    generate_storage_path,
+    get_content_type,
+    get_storage_service,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -17,4 +27,12 @@ __all__ = [
     "validate_file_content",
     "process_and_validate_upload",
     "create_document_record",
+    "generate_storage_path",
+    "get_content_type",
+    "StorageService",
+    "get_storage_service",
+    "StorageError",
+    "StorageConfigurationError",
+    "StorageUploadError",
+    "StorageDeleteError",
 ]

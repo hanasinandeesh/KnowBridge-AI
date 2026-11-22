@@ -23,8 +23,8 @@ if not logger.handlers:
 
 def sanitize_error_message(message: str) -> str:
     """
-    Sanitizes database error messages by redacting passwords,
-    host IP credentials, or sensitive connection parameters.
+    Sanitizes database and storage error messages by redacting passwords,
+    JWT tokens, API keys, host IP credentials, or sensitive connection parameters.
     """
     # Redact :password@ patterns from connection URLs
     sanitized = re.sub(r":([^@/: ]+)@", ":*****@", message)
@@ -34,6 +34,26 @@ def sanitize_error_message(message: str) -> str:
         r"\1*****\2",
         sanitized,
         flags=re.IGNORECASE,
+    )
+    # Redact Bearer tokens
+    sanitized = re.sub(
+        r"(Bearer\s+)[A-Za-z0-9\-._~+/]+=*",
+        r"\1*****",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    # Redact apiKey / apikey headers or params
+    sanitized = re.sub(
+        r"(apiKey|apikey)(\s*[:=]\s*)[A-Za-z0-9\-._~+/]+",
+        r"\1\2*****",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    # Redact Supabase/JWT tokens
+    sanitized = re.sub(
+        r"eyJ[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+",
+        "eyJ*****",
+        sanitized,
     )
     return sanitized
 

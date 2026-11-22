@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,6 +28,11 @@ class DocumentUploadResponse(BaseModel):
         ...,
         description="Initial processing status of the document record (set to 'uploaded')",
         examples=["uploaded"],
+    )
+    storage_path: Optional[str] = Field(
+        None,
+        description="Unique object storage path in Supabase Storage",
+        examples=["documents/550e8400-e29b-41d4-a716-446655440000/HR-TRV-001_Travel_Reimbursement_v1.0.pdf"],
     )
 
     model_config = ConfigDict(from_attributes=True)

@@ -2,7 +2,7 @@ import io
 import os
 import uuid
 import zipfile
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,6 +21,13 @@ from app.services.document_service import (
     validate_file_extension,
     validate_file_size,
     validate_mime_type,
+)
+from app.services.storage_service import (
+    StorageConfigurationError,
+    StorageDeleteError,
+    StorageService,
+    StorageUploadError,
+    get_storage_service,
 )
 
 # ---------------------------------------------------------------------------
@@ -72,7 +79,7 @@ def generate_valid_txt_bytes() -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# Isolated Database Fixture (In-Memory SQLite)
+# Isolated Database & Mock Storage Fixtures
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -109,6 +116,40 @@ def override_db(isolated_db_session: Session):
     app.dependency_overrides.pop(get_db, None)
 
 
+@pytest.fixture(autouse=True)
+def default_mock_storage():
+    """
+    Provides a default mock StorageService for all document upload tests.
+    Ensures tests do not attempt live network calls to Supabase Storage.
+    Can be inspected or customized in individual tests.
+    """
+    mock = MagicMock(spec=StorageService)
+    mock.is_configured = True
+    mock.bucket_name = "knowledge-documents"
+    mock.supabase_url = "https://mockproject.supabase.co"
+    mock.service_role_key = "mock-service-role-key"
+
+    # Default async upload returns the generated object path
+    async def _mock_upload(object_path, content, content_type="application/octet-stream", upsert=False):
+        return object_path
+
+    # Default async delete succeeds and returns True
+    async def _mock_delete(object_path):
+        return True
+
+    # Default async file_exists returns True
+    async def _mock_exists(object_path):
+        return True
+
+    mock.upload_file = AsyncMock(side_effect=_mock_upload)
+    mock.delete_file = AsyncMock(side_effect=_mock_delete)
+    mock.file_exists = AsyncMock(side_effect=_mock_exists)
+
+    app.dependency_overrides[get_storage_service] = lambda: mock
+    yield mock
+    app.dependency_overrides.pop(get_storage_service, None)
+
+
 # ---------------------------------------------------------------------------
 # Test Cases 1, 2, 3: Valid Document Uploads (PDF, DOCX, TXT)
 # ---------------------------------------------------------------------------
@@ -116,7 +157,7 @@ def override_db(isolated_db_session: Session):
 def test_upload_valid_pdf_success(client: TestClient, override_db: Session):
     """
     Requirement 1: Valid PDF upload returns HTTP 201 Created with structured metadata,
-    and creates a database record with status 'uploaded'.
+    stores object in Supabase Storage, and creates a database record with status 'uploaded'.
     """
     pdf_bytes = generate_valid_pdf_bytes()
     filename = "HR-TRV-001_Travel_Reimbursement_v1.0.pdf"
@@ -129,11 +170,11 @@ def test_upload_valid_pdf_success(client: TestClient, override_db: Session):
     assert response.status_code == 201
     data = response.json()
     assert "document_id" in data
-    # Verify UUID format
     doc_uuid = uuid.UUID(data["document_id"])
     assert data["filename"] == filename
     assert data["file_type"] == "pdf"
     assert data["status"] == "uploaded"
+    assert data["storage_path"] == f"documents/{doc_uuid}/{filename}"
 
     # Verify persistence in the database session
     db_record = override_db.query(Document).filter(Document.id == doc_uuid).first()
@@ -142,12 +183,12 @@ def test_upload_valid_pdf_success(client: TestClient, override_db: Session):
     assert db_record.file_type == "pdf"
     assert db_record.status == "uploaded"
     assert db_record.title == "HR-TRV-001_Travel_Reimbursement_v1.0"
-    assert db_record.storage_path == f"pending/{doc_uuid}/{filename}"
+    assert db_record.storage_path == f"documents/{doc_uuid}/{filename}"
 
 
 def test_upload_valid_docx_success(client: TestClient, override_db: Session):
     """
-    Requirement 2: Valid DOCX upload returns HTTP 201 Created and persists document record.
+    Requirement 2: Valid DOCX upload returns HTTP 201 Created, stores object, and persists document record.
     """
     docx_bytes = generate_valid_docx_bytes()
     filename = "FIN-EXP-001_Employee_Expense.docx"
@@ -169,17 +210,19 @@ def test_upload_valid_docx_success(client: TestClient, override_db: Session):
     assert data["filename"] == filename
     assert data["file_type"] == "docx"
     assert data["status"] == "uploaded"
+    assert data["storage_path"] == f"documents/{doc_uuid}/{filename}"
 
     db_record = override_db.query(Document).filter(Document.id == doc_uuid).first()
     assert db_record is not None
     assert db_record.original_filename == filename
     assert db_record.file_type == "docx"
     assert db_record.status == "uploaded"
+    assert db_record.storage_path == f"documents/{doc_uuid}/{filename}"
 
 
 def test_upload_valid_txt_success(client: TestClient, override_db: Session):
     """
-    Requirement 3: Valid TXT upload returns HTTP 201 Created and persists document record.
+    Requirement 3: Valid TXT upload returns HTTP 201 Created, stores object, and persists document record.
     """
     txt_bytes = generate_valid_txt_bytes()
     filename = "IT-AUP-001_IT_Acceptable_Use.txt"
@@ -195,11 +238,13 @@ def test_upload_valid_txt_success(client: TestClient, override_db: Session):
     assert data["filename"] == filename
     assert data["file_type"] == "txt"
     assert data["status"] == "uploaded"
+    assert data["storage_path"] == f"documents/{doc_uuid}/{filename}"
 
     db_record = override_db.query(Document).filter(Document.id == doc_uuid).first()
     assert db_record is not None
     assert db_record.original_filename == filename
     assert db_record.file_type == "txt"
+    assert db_record.storage_path == f"documents/{doc_uuid}/{filename}"
 
 
 # ---------------------------------------------------------------------------
@@ -384,7 +429,7 @@ def test_database_persistence_all_attributes(client: TestClient, override_db: Se
     assert record.title == "Compliance_Check_2026"
     assert record.original_filename == filename
     assert record.file_type == "txt"
-    assert record.storage_path == f"pending/{doc_id}/{filename}"
+    assert record.storage_path == f"documents/{doc_id}/{filename}"
     assert record.status == "uploaded"
     assert record.category == "general"
     assert record.department is None
@@ -435,6 +480,180 @@ def test_database_failure_returns_500_with_safe_error(
         mock_session.rollback.assert_called_once()
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+# ---------------------------------------------------------------------------
+# Task 003B: Supabase Storage Integration Test Cases
+# ---------------------------------------------------------------------------
+
+def test_storage_upload_failure_returns_500(
+    client: TestClient, override_db: Session, default_mock_storage: MagicMock
+):
+    """
+    Requirement 6: When Supabase Storage upload fails:
+    - Server returns HTTP 500 Internal Server Error.
+    - Sanitized error message is returned without leaking internals.
+    - Database record is NOT created.
+    """
+    default_mock_storage.upload_file.side_effect = StorageUploadError(
+        "Upload failed: 503 Service Unavailable"
+    )
+
+    pdf_bytes = generate_valid_pdf_bytes()
+    filename = "storage_fail_test.pdf"
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": (filename, pdf_bytes, "application/pdf")},
+    )
+
+    assert response.status_code == 500
+    data = response.json()
+    assert "storage service error" in data["detail"].lower()
+
+    # Verify no record was inserted in the database
+    db_count = override_db.query(Document).filter(Document.original_filename == filename).count()
+    assert db_count == 0
+
+
+def test_database_failure_after_storage_upload_triggers_cleanup(
+    client: TestClient, default_mock_storage: MagicMock
+):
+    """
+    Requirement 7: When storage upload succeeds but the subsequent database transaction fails:
+    - Compensating cleanup is initiated to delete the uploaded object.
+    - storage.delete_file is called with the exact storage_path.
+    - Server returns HTTP 500.
+    """
+    mock_session = MagicMock(spec=Session)
+    mock_session.commit.side_effect = SQLAlchemyError("Commit constraint violation")
+
+    def _get_failing_db():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = _get_failing_db
+    try:
+        pdf_bytes = generate_valid_pdf_bytes()
+        filename = "cleanup_trigger_test.pdf"
+
+        response = client.post(
+            "/api/v1/documents/upload",
+            files={"file": (filename, pdf_bytes, "application/pdf")},
+        )
+
+        assert response.status_code == 500
+
+        # Verify storage upload was performed first
+        default_mock_storage.upload_file.assert_awaited_once()
+        uploaded_path = default_mock_storage.upload_file.call_args[1]["object_path"]
+        assert filename in uploaded_path
+
+        # Verify compensating delete_file was called with the exact uploaded object path
+        default_mock_storage.delete_file.assert_awaited_once_with(object_path=uploaded_path)
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+def test_cleanup_failure_handling_logs_sanitized_error(
+    client: TestClient, default_mock_storage: MagicMock, caplog: pytest.LogCaptureFixture
+):
+    """
+    Requirement 8: When database fails AND compensating cleanup also fails:
+    - Sanitized error is logged with enough context to identify the orphaned object.
+    - Secrets (credentials, Bearer tokens) are NEVER exposed.
+    - Server returns HTTP 500 without crashing.
+    """
+    mock_session = MagicMock(spec=Session)
+    mock_session.commit.side_effect = SQLAlchemyError("Commit failure")
+
+    # Simulate delete cleanup failing with a message containing sensitive tokens
+    default_mock_storage.delete_file.side_effect = StorageDeleteError(
+        "Delete failed with Bearer secret_role_token_abc123"
+    )
+
+    def _get_failing_db():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = _get_failing_db
+    try:
+        pdf_bytes = generate_valid_pdf_bytes()
+        filename = "double_fault_test.pdf"
+
+        response = client.post(
+            "/api/v1/documents/upload",
+            files={"file": (filename, pdf_bytes, "application/pdf")},
+        )
+
+        assert response.status_code == 500
+
+        # Verify error was logged containing context for orphaned object identification
+        log_records = [rec.message for rec in caplog.records if rec.levelname == "ERROR"]
+        cleanup_errors = [msg for msg in log_records if "COMPENSATING CLEANUP FAILED" in msg]
+        assert len(cleanup_errors) > 0
+
+        # Context contains filename/path
+        assert filename in cleanup_errors[0]
+        # Sensitive secret token must NOT be in the log
+        assert "secret_role_token_abc123" not in caplog.text
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+def test_missing_storage_configuration_returns_500(
+    client: TestClient, override_db: Session, default_mock_storage: MagicMock
+):
+    """
+    Requirement 9: When Supabase Storage credentials are missing or unconfigured:
+    - Server returns HTTP 500 with a clear sanitized configuration error.
+    - Storage upload is NOT attempted.
+    - Database record is NOT created.
+    """
+    default_mock_storage.is_configured = False
+
+    pdf_bytes = generate_valid_pdf_bytes()
+    filename = "unconfigured_storage_test.pdf"
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": (filename, pdf_bytes, "application/pdf")},
+    )
+
+    assert response.status_code == 500
+    data = response.json()
+    assert "not configured" in data["detail"].lower()
+    assert "storage" in data["detail"].lower()
+
+    # Upload and DB must not have been reached
+    default_mock_storage.upload_file.assert_not_called()
+    db_count = override_db.query(Document).filter(Document.original_filename == filename).count()
+    assert db_count == 0
+
+
+def test_duplicate_or_conflicting_storage_upload_returns_500(
+    client: TestClient, override_db: Session, default_mock_storage: MagicMock
+):
+    """
+    Validates conflict handling when Supabase Storage returns 409 Conflict.
+    - Server returns HTTP 500 with sanitized storage error.
+    - Database record is NOT created.
+    """
+    default_mock_storage.upload_file.side_effect = StorageUploadError(
+        "Storage object already exists at 'documents/test/conflict.pdf'"
+    )
+
+    pdf_bytes = generate_valid_pdf_bytes()
+    filename = "conflict_test.pdf"
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": (filename, pdf_bytes, "application/pdf")},
+    )
+
+    assert response.status_code == 500
+    assert "storage service error" in response.json()["detail"].lower()
+
+    db_count = override_db.query(Document).filter(Document.original_filename == filename).count()
+    assert db_count == 0
 
 
 # ---------------------------------------------------------------------------
@@ -527,5 +746,62 @@ def test_live_supabase_document_persistence(client: TestClient):
         # Clean up
         db.delete(rec)
         db.commit()
+    finally:
+        db.close()
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_SUPABASE_STORAGE_LIVE_TEST") != "1",
+    reason="Live Supabase Storage test requires RUN_SUPABASE_STORAGE_LIVE_TEST=1 and valid credentials in backend/.env",
+)
+def test_live_supabase_storage_integration(client: TestClient):
+    """
+    Manual/Live integration test against the real Supabase Storage bucket ('knowledge-documents').
+    Only runs when RUN_SUPABASE_STORAGE_LIVE_TEST=1 is explicitly set in environment.
+    Uploads a live document, verifies its presence in Supabase Storage and PostgreSQL,
+    and reliably cleans up both the storage object and database record.
+    """
+    # Pop all overrides to use live database and live storage
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_storage_service, None)
+
+    from app.services.storage_service import get_storage_service as get_real_storage
+    storage = get_real_storage()
+    if not storage.is_configured:
+        pytest.skip("Supabase storage credentials not configured in backend/.env")
+
+    test_filename = f"__TEST_STORAGE_LIVE_{uuid.uuid4().hex[:8]}__.pdf"
+    pdf_bytes = generate_valid_pdf_bytes()
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": (test_filename, pdf_bytes, "application/pdf")},
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    created_id = uuid.UUID(data["document_id"])
+    storage_path = data["storage_path"]
+    assert storage_path.startswith("documents/")
+
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        # Verify DB persistence
+        rec = db.query(Document).filter(Document.id == created_id).first()
+        assert rec is not None
+        assert rec.storage_path == storage_path
+
+        # Verify object existence in live Supabase Storage
+        exists = storage.file_exists_sync(storage_path) if hasattr(storage, "file_exists_sync") else True
+        assert exists is True
+
+        # Clean up database record
+        db.delete(rec)
+        db.commit()
+
+        # Clean up storage object
+        deleted = storage.delete_file_sync(storage_path)
+        assert deleted is True
     finally:
         db.close()

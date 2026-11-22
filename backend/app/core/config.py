@@ -72,10 +72,38 @@ class Settings(BaseSettings):
         description="SQLAlchemy SQL query statement logging (set False in production)",
     )
 
-    # Supabase Storage & Future Capabilities (Task 04)
-    SUPABASE_URL: str = ""
-    SUPABASE_SERVICE_ROLE_KEY: str = ""
-    STORAGE_BUCKET_NAME: str = "knowledge-documents"
+    # Supabase Storage Configuration (Task 003B)
+    SUPABASE_URL: str = Field(
+        default="",
+        description="Supabase project base URL (e.g. https://<project-ref>.supabase.co)",
+    )
+    SUPABASE_SERVICE_ROLE_KEY: str = Field(
+        default="",
+        description="Supabase service-role secret key (server-side only, never exposed to client)",
+    )
+    STORAGE_BUCKET_NAME: str = Field(
+        default="knowledge-documents",
+        description="Private Supabase Storage bucket for enterprise documents",
+    )
+    STORAGE_TIMEOUT: float = Field(
+        default=15.0,
+        description="HTTP request timeout in seconds for Supabase Storage API operations",
+    )
+
+    @property
+    def is_storage_configured(self) -> bool:
+        """
+        Validates whether Supabase Storage credentials and bucket are configured.
+        Returns False if any required setting is missing or contains placeholder tokens.
+        """
+        if not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY or not self.STORAGE_BUCKET_NAME:
+            return False
+        placeholder_indicators = ("[YOUR-", "YOUR_ACTUAL_", "<project-ref>")
+        if any(token in self.SUPABASE_URL for token in placeholder_indicators):
+            return False
+        if any(token in self.SUPABASE_SERVICE_ROLE_KEY for token in placeholder_indicators):
+            return False
+        return True
 
     # Embedding Model Settings
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
