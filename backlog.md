@@ -40,13 +40,15 @@
     - 27 automated tests passing with 100% pass rate.
   - **Estimated Effort:** Completed
 
-- [ ] **STORY-403: Local Sentence-Transformers Embedding Pipeline**
-  - **Description:** Implement `backend/app/services/embedding.py` wrapping Hugging Face `sentence-transformers/all-MiniLM-L6-v2` running in-process on CPU.
+- [x] **STORY-403: Local Sentence-Transformers Embedding Pipeline [Task 003E Completed]**
+  - **Description:** Implement `backend/app/services/embedding_service.py` wrapping Hugging Face `sentence-transformers/all-MiniLM-L6-v2` running in-process on CPU.
   - **Acceptance Criteria:**
     - Embeddings must match `vector(384)` float dimension.
     - Supports batch generation (batch size = 32) for high-throughput ingestion.
+    - Unit L2 normalization for both document chunks and search queries.
     - Zero external API cost or network dependencies for embedding.
-  - **Estimated Effort:** 30 mins
+    - 20 automated tests passing with 100% pass rate.
+  - **Estimated Effort:** Completed
 
 - [x] **STORY-404: Supabase Storage Integration & File Paths [Task 003B Completed]**
   - **Description:** Implement server-side Supabase Storage client uploading original PDF, DOCX, and TXT binaries to `knowledge-documents` bucket.

@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 from urllib.parse import quote_plus, urlparse, urlunparse
 
 from pydantic import Field
@@ -105,9 +106,27 @@ class Settings(BaseSettings):
             return False
         return True
 
-    # Embedding Model Settings
-    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
-    EMBEDDING_DIMENSION: int = 384
+    # Embedding Model Settings (Task 003E)
+    EMBEDDING_MODEL_NAME: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Sentence Transformers model identifier for dense embeddings",
+    )
+    EMBEDDING_DIMENSION: int = Field(
+        default=384,
+        description="Expected embedding dimension vector length (fixed at 384)",
+    )
+    EMBEDDING_BATCH_SIZE: int = Field(
+        default=32,
+        description="Default batch size for generating vector embeddings",
+    )
+    EMBEDDING_NORMALIZE: bool = Field(
+        default=True,
+        description="Whether to normalize generated vector embeddings to unit length (L2 norm)",
+    )
+    EMBEDDING_DEVICE: Optional[str] = Field(
+        default=None,
+        description="Computation device for embeddings: 'cpu', 'cuda', or None (auto-detect)",
+    )
 
     # Document Upload & Processing Settings (Task 003A)
     MAX_UPLOAD_SIZE_BYTES: int = Field(
