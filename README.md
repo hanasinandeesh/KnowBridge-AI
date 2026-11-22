@@ -103,6 +103,12 @@ DB_POOL_TIMEOUT=30
 DB_CONNECT_TIMEOUT=5
 DB_POOL_RECYCLE=1800
 DB_ECHO=false
+
+# Supabase Storage Configuration (Task 003B)
+SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="[YOUR-SUPABASE-SERVICE-ROLE-KEY]"
+STORAGE_BUCKET_NAME="knowledge-documents"
+STORAGE_TIMEOUT=15.0
 ```
 
 ### 4. Running the Backend Server
@@ -121,7 +127,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `GET` | `/health` | Core application health probe | `200 OK` |
 | `GET` | `/health/db` | Database connectivity verification (`SELECT 1`) | `200 OK` / `503 Unavailable` |
 | `GET` | `/api/v1/health` | Versioned API health check | `200 OK` |
-| `POST` | `/api/v1/documents/upload` | Multipart document upload & validation (PDF, DOCX, TXT) | `201 Created` |
+| `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence | `201 Created` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -135,13 +141,19 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes:
+Test coverage includes 70 automated tests (100% pass rate):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
 - Database connectivity probe and scalar verification (`SELECT 1`).
 - Error message sanitization preventing credential leakage.
 - Transactional session dependency (`get_db`) lifecycle verification.
+- Safe filename sanitization and path traversal defense (`../../`, `..\..\`, control chars).
+- Magic-byte validation for PDF (`%PDF-`), DOCX (`PK\x03\x04`), and TXT.
+- Supabase Storage async and sync uploads, deletions, and existence checks.
+- Deterministic storage object naming: `documents/{document_id}/{safe_filename}`.
+- Compensating cleanup ensuring zero orphaned storage objects upon database rollback.
+- Double-fault handling logging orphaned paths without leaking credentials.
 
 ---
 
@@ -163,10 +175,16 @@ KnowBridge-AI/
 │   │   ├── schemas/
 │   │   │   └── document.py         # Pydantic request & response schemas
 │   │   ├── services/
-│   │   │   └── document_service.py # Validation & upload business logic
+│   │   │   ├── document_service.py # Validation & metadata persistence
+│   │   │   └── storage_service.py  # Supabase Storage client & cleanup
 │   │   └── main.py                 # FastAPI application entrypoint
 │   ├── migrations/                 # PostgreSQL DDL, HNSW index & functions
-│   ├── tests/                      # Automated test suite (42 tests)
+│   ├── scripts/                    # Live storage integration verification
+│   ├── tests/                      # Automated test suite (72 tests)
+│   │   ├── test_config.py
+│   │   ├── test_health.py
+│   │   ├── test_document_upload.py
+│   │   └── test_storage_service.py
 │   ├── requirements.txt            # Python dependencies
 │   ├── .env.example                # Configuration template
 │   └── .gitignore
@@ -190,4 +208,5 @@ KnowBridge-AI/
 - [x] **Task 02A:** Supabase PostgreSQL DDL, 7 MVP Tables, HNSW Index, Stored Procedure
 - [x] **Task 02B:** FastAPI & Supabase PostgreSQL Integration with SQLAlchemy 2.0 & psycopg 3
 - [x] **Task 003A:** Document Upload API, Multi-Tier Validation & Metadata Persistence
-- [ ] **Task 04:** Ingestion Engine & Document Processing Service *(Pending)*
+- [x] **Task 003B:** Supabase Storage Integration, Deterministic Paths & Compensating Cleanup
+- [ ] **Task 04 / 003C:** Ingestion Engine & Document Processing Service *(Pending)*

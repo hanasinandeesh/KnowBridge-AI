@@ -52,12 +52,14 @@ KnowBridge AI has completed foundational specification, system architecture, dat
   6. `user_memories`: Long-term fact extraction.
   7. `ingestion_jobs`: Asynchronous ingestion pipeline tracking.
 - **Stored Functions:** `match_policy_chunks` (policy-aware cosine similarity search filtered by effective dates and active document status).
-- **Storage Bucket:** `knowbridge-documents` created in Supabase Storage.
+- **Storage Bucket:** `knowledge-documents` created in Supabase Storage.
+- **Storage Client:** Server-side `StorageService` using `httpx` with deterministic pathing (`documents/{id}/{filename}`).
 
 ### 3.2 Backend Service Layer (FastAPI + SQLAlchemy)
 - **Framework:** FastAPI 0.111.0 on Python 3.11 with Uvicorn ASGI server.
 - **ORM & Connection Engine:** SQLAlchemy 2.0.31 with connection pooling (`QueuePool`).
 - **Database Driver:** `psycopg` 3.3.9 (`postgresql+psycopg://` dialect).
+- **Storage Service:** Server-side Supabase Storage REST API client via `httpx` (`upload_file`, `delete_file`, `file_exists`).
 - **Connection Pooling Parameters:**
   - `pool_pre_ping = True`: Discards closed or stale TCP sockets automatically.
   - `pool_size = 5`: Persistent pooled connections.
@@ -71,7 +73,7 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 - **Environment Management:** Pydantic v2 `BaseSettings` reading from `backend/.env`.
 - **Dialect Normalization:** Transparently converts `postgresql://` and `postgres://` to `postgresql+psycopg://`.
 - **Credential Masking:** All database URIs mask passwords in logs (`masked_database_url`).
-- **Error Redaction:** Custom sanitizer replaces passwords in connection strings and parameter lists with `*****`.
+- **Error Redaction:** Custom sanitizer replaces passwords, Bearer tokens, API keys, and JWT strings with `*****`.
 - **Git Protection:** Verified `backend/.env` is strictly excluded in root `.gitignore` and `backend/.gitignore`.
 - **Example Configuration:** Provided in `backend/.env.example`.
 
@@ -87,7 +89,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ /api/v1/health             │ GET    │ 200 OK       │ Versioned health probe mirror.                         │
 │ /health/db                 │ GET    │ 200 / 503    │ Executes 'SELECT 1'. Returns latency & dialect if      │
 │                            │        │              │ connected; 503 with sanitized error if disconnected.   │
-│ /api/v1/documents/upload   │ POST   │ 201 Created  │ Validates and uploads PDF/DOCX/TXT; persists metadata. │
+│ /api/v1/documents/upload   │ POST   │ 201 Created  │ Validates and stores PDF/DOCX/TXT in Supabase Storage  │
+│                            │        │              │ & persists metadata with storage_path in PostgreSQL.   │
 │ /                          │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
 └────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
@@ -97,8 +100,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 ## 5. Test Suite Verification Metrics
 
 - **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
-- **Total Tests:** 42 automated tests (41 isolated unit/API tests + 1 opt-in live integration test).
-- **Pass Rate:** 100% (41 passed in 1.08s).
+- **Total Tests:** 72 automated tests (70 automated unit/API tests + 2 opt-in live integration tests).
+- **Pass Rate:** 100% (70 passed in 1.26s).
 - **Coverage Areas:**
   - Configuration defaults and environment overrides (`backend/tests/test_config.py`).
   - Driver URI normalization and dialect conversion (`backend/tests/test_config.py`).
@@ -109,6 +112,14 @@ KnowBridge AI has completed foundational specification, system architecture, dat
   - Error message sanitization preventing credential leakage (`backend/tests/test_health.py`).
   - Transactional session lifecycle (`get_db`) cleanup (`backend/tests/test_health.py`).
   - Valid PDF, DOCX, and TXT upload processing (`backend/tests/test_document_upload.py`).
+  - Storage object path generation and path traversal defense (`backend/tests/test_storage_service.py`).
+  - MIME type mapping and preservation (`backend/tests/test_storage_service.py`).
+  - Supabase Storage async and sync uploads, deletes, and existence checks (`backend/tests/test_storage_service.py`).
+  - Storage error translation, network timeout, and connection failure handling (`backend/tests/test_storage_service.py`).
+  - Storage upload failure handling (HTTP 500 without DB write) (`backend/tests/test_document_upload.py`).
+  - Compensating cleanup deleting uploaded object when DB transaction fails (`backend/tests/test_document_upload.py`).
+  - Double-fault failure handling (cleanup failure logged with path context, zero credential leakage) (`backend/tests/test_document_upload.py`).
+  - Unconfigured storage credentials detection (HTTP 500) (`backend/tests/test_document_upload.py`).
   - Unsupported extension rejection (HTTP 400).
   - Empty file rejection (0 bytes) (HTTP 400).
   - Configurable upload size limit enforcement (HTTP 413).
@@ -116,7 +127,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
   - Safe filename sanitization and path traversal defense (`../../`, `..\..\`, control chars).
   - Full attribute database persistence verification (`Document` model).
   - Database failure handling with safe rollback and sanitized credential masking (HTTP 500).
-  - Live Supabase integration test (`test_live_supabase_document_persistence`).
+  - Live Supabase DB integration test (`test_live_supabase_document_persistence`).
+  - Live Supabase Storage integration test (`test_live_supabase_storage_integration`).
 
 ---
 
