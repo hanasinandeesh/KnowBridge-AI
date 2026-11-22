@@ -12,6 +12,8 @@ def test_default_settings():
     assert config.DB_POOL_TIMEOUT == 30
     assert config.DB_POOL_RECYCLE == 1800
     assert config.DB_ECHO is False
+    assert config.CHUNK_SIZE == 1000
+    assert config.CHUNK_OVERLAP == 150
 
 
 @pytest.mark.parametrize(

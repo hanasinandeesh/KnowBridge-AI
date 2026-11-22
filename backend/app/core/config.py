@@ -119,6 +119,16 @@ class Settings(BaseSettings):
         description="Allowed file extensions for document upload",
     )
 
+    # Document Chunking Settings (Task 003D)
+    CHUNK_SIZE: int = Field(
+        default=1000,
+        description="Default document chunk size in characters",
+    )
+    CHUNK_OVERLAP: int = Field(
+        default=150,
+        description="Default document chunk overlap in characters",
+    )
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE) if ENV_FILE.exists() else ".env",
         env_file_encoding="utf-8",

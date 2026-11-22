@@ -26,7 +26,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 003A: Document Upload API & Validation            │ COMPLETED   │ Upload API, 42 tests, DB  │
 │ TASK 003B: Supabase Storage Integration & File Paths   │ COMPLETED   │ Storage API, 70 tests, DB │
 │ TASK 003C: Document Text Extraction Service            │ COMPLETED   │ Parsers, 90 tests, Live   │
-│ TASK 04 / 003D: Chunking & Embeddings Engine           │ READY       │ Awaiting User Approval    │
+│ TASK 003D: Intelligent Document Chunking Service       │ COMPLETED   │ Chunker, 117 tests, Live  │
+│ TASK 003E / 04: Embeddings Generation Engine           │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
 │ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
@@ -99,6 +100,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │                                       │        │              │ & persists metadata with storage_path in PostgreSQL.   │
 │ /api/v1/documents/{id}/extract        │ POST   │ 200 OK       │ Downloads binary from Supabase Storage & extracts      │
 │                                       │        │              │ structured text, 1-based PDF pages & DOCX/TXT units.   │
+│ /api/v1/documents/{id}/chunk          │ POST   │ 200 OK       │ Structure-aware chunking preserving section hierarchy, │
+│                                       │        │              │ provenance, table layouts, and 1-based PDF pages.      │
 │ /                                     │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
 └───────────────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
@@ -107,12 +110,14 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 
 ## 5. Test Suite Verification Metrics
 
-- **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
-- **Total Tests:** 92 automated tests (90 automated unit/API tests + 2 opt-in live integration tests).
-- **Pass Rate:** 100% (90 passed in 1.49s).
+- **Test Runner:** `pytest 9.1.1` (in `backend/.venv`)
+- **Total Tests:** 119 automated tests (117 automated unit/API tests + 2 opt-in live integration tests).
+- **Pass Rate:** 100% (117 passed in 2.34s).
 - **Coverage Areas:**
   - Multi-page PDF extraction with 1-based page numbering (`backend/tests/test_document_extractor.py`).
   - Scanned PDF detection with zero extractable text (`ocr_supported=False`, `empty_content`).
+  - Intelligent document chunking across PDF, DOCX, TXT formats (`backend/tests/test_document_chunker.py`).
+  - Heading hierarchy, table splitting with repeated headers, and overlap boundary preservation.
   - Blank and corrupt PDF error handling (`CorruptedDocumentError`).
   - Password-protected PDF detection (`EncryptedDocumentError`).
   - DOCX paragraph order preservation and heading hierarchy extraction.
