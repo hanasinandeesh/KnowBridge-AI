@@ -40,12 +40,15 @@
     - Zero external API cost or network dependencies for embedding.
   - **Estimated Effort:** 30 mins
 
-- [ ] **STORY-404: Supabase Storage Integration & File Deduplication**
-  - **Description:** Implement Supabase Storage client uploading original PDF binaries to `knowbridge-documents` bucket and calculating SHA-256 file hashes.
+- [x] **STORY-404: Supabase Storage Integration & File Paths [Task 003B Completed]**
+  - **Description:** Implement server-side Supabase Storage client uploading original PDF, DOCX, and TXT binaries to `knowledge-documents` bucket.
   - **Acceptance Criteria:**
-    - Duplicate uploads matching existing `file_hash` in `document_versions` are rejected with HTTP 409 Conflict.
-    - Secure storage path string is stored in `document_versions.storage_path`.
-  - **Estimated Effort:** 30 mins
+    - Generates unique deterministic storage path `documents/{document_id}/{safe_filename}`.
+    - Prevents path traversal and validates UUIDs.
+    - Persists confirmed storage path in `documents.storage_path`.
+    - Implements compensating cleanup to delete uploaded objects if database transactions fail.
+    - Sanitizes logs preventing secret token exposure.
+  - **Estimated Effort:** Completed
 
 - [ ] **STORY-405: Asynchronous Ingestion Job Coordinator**
   - **Description:** Implement background worker inserting chunks into `document_chunks` and updating `ingestion_jobs` status (`PENDING` -> `PROCESSING` -> `COMPLETED`/`FAILED`).
@@ -92,8 +95,8 @@
 ### Epic 3: FastAPI Application & Endpoints (Task 06)
 **Priority:** P0 | **Status:** Backlog | **Dependency:** Task 05
 
-- [x] **STORY-601: Document Upload Multipart Endpoint (`POST /api/v1/documents/upload`) [Task 003A Completed]**
-  - **Acceptance Criteria:** Accepts multipart PDF, DOCX, and TXT files, performs safe filename sanitization, extension validation, MIME validation, file signature validation, and creates initial document record with status `'uploaded'`. (Storage persistence and background ingestion jobs to be attached in Task 003B / Task 04).
+- [x] **STORY-601: Document Upload Multipart Endpoint (`POST /api/v1/documents/upload`) [Task 003A & 003B Completed]**
+  - **Acceptance Criteria:** Accepts multipart PDF, DOCX, and TXT files, performs safe filename sanitization, extension validation, MIME validation, file signature validation, uploads binary to private Supabase Storage bucket `knowledge-documents`, creates initial document record with status `'uploaded'` and real `storage_path`, and executes compensating cleanup on database failure.
   - **Estimated Effort:** Completed
 
 - [ ] **STORY-602: Ingestion Job Polling Endpoint (`GET /api/v1/ingestion/{job_id}`)**
