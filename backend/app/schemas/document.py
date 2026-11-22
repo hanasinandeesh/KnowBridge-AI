@@ -34,5 +34,10 @@ class DocumentUploadResponse(BaseModel):
         description="Unique object storage path in Supabase Storage",
         examples=["documents/550e8400-e29b-41d4-a716-446655440000/HR-TRV-001_Travel_Reimbursement_v1.0.pdf"],
     )
+    ingestion_job_id: Optional[uuid.UUID] = Field(
+        None,
+        description="UUID of the queued asynchronous ingestion job, if processing was triggered",
+        examples=["770e8400-e29b-41d4-a716-446655440002"],
+    )
 
     model_config = ConfigDict(from_attributes=True)

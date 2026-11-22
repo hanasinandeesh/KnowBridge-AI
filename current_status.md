@@ -3,13 +3,13 @@
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Report Date:** November 22, 2026  
 **Engineering Lead:** Senior Python Backend Engineer & AI Architect  
-**Current Milestone:** Task 003F Completed — Ready for Task 003G / Task 04 (Ingestion Orchestration)  
+**Current Milestone:** Task 003G Completed — Ready for Task 05 (LangGraph RAG Orchestrator)  
 
 ---
 
 ## 1. Executive Summary
 
-KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, the **Task 003A Document Upload API**, **Task 003B Supabase Storage Integration**, and **Task 003C Document Text Extraction Service**. The FastAPI backend application is integrated with Supabase PostgreSQL and private Supabase Storage (`knowledge-documents`). Uploaded PDF, DOCX, and TXT files are validated, stored permanently in Supabase Storage with unique deterministic object paths, and registered in PostgreSQL with status `'uploaded'`. A robust compensating cleanup mechanism ensures zero orphaned files if transactions fail. Document binaries are retrieved securely via server-side storage streams and parsed into structured logical units (PyMuPDF for 1-based PDF pages, python-docx for document-order paragraphs and Markdown tables, and UTF-8 TXT with BOM support). Connection pooling, credential sanitization, health monitoring, and 90 automated tests (100% pass rate) are fully verified live.
+KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, the **Task 003A Document Upload API**, **Task 003B Supabase Storage Integration**, **Task 003C Document Text Extraction Service**, **Task 003D Intelligent Document Chunking Service**, **Task 003E Embeddings Generation Engine**, **Task 003F PostgreSQL pgvector Chunk Persistence**, and **Task 003G End-to-End Ingestion Orchestrator**. The FastAPI backend coordinates asynchronous background ingestion from raw document upload through storage, parsing, hierarchical chunking, dense vector embedding, and atomic PostgreSQL persistence. Polling endpoints (`GET /api/v1/ingestion/{job_id}` and `GET /api/v1/ingestion/document/{document_id}`) and trigger endpoints (`POST /api/v1/ingestion/{document_id}/process` returning HTTP 202 Accepted) are fully operational with concurrency guards, credential redaction, and rollback protection. 175 automated tests (100% pass rate) are verified.
 
 ---
 
@@ -29,9 +29,9 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 003D: Intelligent Document Chunking Service       │ COMPLETED   │ Chunker, 117 tests, Live  │
 │ TASK 003E: Embeddings Generation Service (MiniLM)      │ COMPLETED   │ 137 tests, Live Real-Model│
 │ TASK 003F: PostgreSQL pgvector Chunk Persistence       │ COMPLETED   │ 159 tests, Live Supabase  │
-│ TASK 003G: End-to-End Ingestion Orchestrator           │ READY       │ Awaiting User Approval    │
-│ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
-│ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
+│ TASK 003G: End-to-End Ingestion Orchestrator           │ COMPLETED   │ 175 tests, Background Run │
+│ TASK 05: LangGraph RAG Orchestrator                    │ READY       │ Ready to Implement        │
+│ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload & Ingestion APIs   │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
 │ TASK 08: Evaluation (RAGAS) & Observability (Langfuse) │ PENDING     │ Blocked by Task 06        │
 │ TASK 09: Production Deployment & E2E Validation        │ PENDING     │ Blocked by Task 07 & 08   │
@@ -100,6 +100,7 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │                                       │        │              │ connected; 503 with sanitized error if disconnected.   │
 │ /api/v1/documents/upload              │ POST   │ 201 Created  │ Validates and stores PDF/DOCX/TXT in Supabase Storage  │
 │                                       │        │              │ & persists metadata with storage_path in PostgreSQL.   │
+│                                       │        │              │ Optional auto_process=true queues background job.      │
 │ /api/v1/documents/{id}/extract        │ POST   │ 200 OK       │ Downloads binary from Supabase Storage & extracts      │
 │                                       │        │              │ structured text, 1-based PDF pages & DOCX/TXT units.   │
 │ /api/v1/documents/{id}/chunk          │ POST   │ 200 OK       │ Structure-aware chunking preserving section hierarchy, │
@@ -108,6 +109,9 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │                                       │        │              │ embeddings preserving full provenance metadata.        │
 │ /api/v1/documents/{id}/persist        │ POST   │ 200 OK       │ Extracts, chunks, embeds, and persists into Supabase   │
 │                                       │        │              │ PostgreSQL document_chunks table with pgvector (384d). │
+│ /api/v1/ingestion/{job_id}            │ GET    │ 200 OK / 404 │ Ingestion job status polling with metrics & timings.   │
+│ /api/v1/ingestion/document/{doc_id}   │ GET    │ 200 OK / 404 │ Latest ingestion job status for given document.        │
+│ /api/v1/ingestion/{doc_id}/process    │ POST   │ 202 Accepted │ Triggers async background ingestion coordinator.       │
 │ /                                     │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
 └───────────────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
@@ -117,9 +121,15 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 ## 5. Test Suite Verification Metrics
 
 - **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
-- **Total Tests:** 161 automated tests (159 passed + 2 opt-in live integration tests).
-- **Pass Rate:** 100% (159 passed in 16.19s).
+- **Total Tests:** 177 automated tests (175 passed + 2 opt-in live integration tests).
+- **Pass Rate:** 100% (175 passed in 41.08s).
 - **Coverage Areas:**
+  - End-to-end asynchronous ingestion orchestration & coordinator (`backend/tests/test_ingestion_orchestration.py`).
+  - Job status polling (`GET /api/v1/ingestion/{job_id}`) and document latest job (`GET /api/v1/ingestion/document/{id}`).
+  - Async trigger endpoint (`POST /api/v1/ingestion/{document_id}/process` returning HTTP 202 Accepted).
+  - Concurrency guards preventing simultaneous overlapping runs on the same document (`test_ingestion_orchestration.py`).
+  - Standalone session handling via `SessionLocal()` and background pipeline execution (`test_ingestion_orchestration.py`).
+  - Credential and token sanitization in `ingestion_jobs.error_message` (`test_ingestion_orchestration.py`).
   - Database persistence of chunks and pgvector embeddings (`backend/tests/test_chunk_persistence.py`).
   - Document version association, safe version resolution, and idempotency (`test_chunk_persistence.py`).
   - Single-transaction atomic replacement and rollback verification (`test_chunk_persistence.py`).

@@ -128,6 +128,20 @@
   - [x] Author 22 automated tests in `backend/tests/test_chunk_persistence.py` (159 passing backend tests total, 100% pass)
   - [x] Live Supabase verification: processed 3 synthetic documents (PDF, DOCX, TXT), confirmed 56 chunks, 384d vectors, live idempotency, and rollback safety
 
+- [x] **TASK 003G — End-to-End Ingestion Orchestration (Completed)**
+  - [x] Implement asynchronous background coordinator `IngestionService` (`backend/app/services/ingestion_service.py`) orchestrating extraction, chunking, embedding generation, and atomic persistence
+  - [x] Implement top-level standalone execution worker `run_background_ingestion` managing dedicated DB sessions via `SessionLocal()`
+  - [x] Implement concurrency guards preventing duplicate simultaneous processing runs on the same document
+  - [x] Implement sanitized error handling and credential redaction ensuring zero secret leakage in job logs or DB
+  - [x] Implement REST polling endpoints:
+    - `GET /api/v1/ingestion/{job_id}` returning job metrics, timings, and progress (200 OK / 404 Not Found)
+    - `GET /api/v1/ingestion/document/{document_id}` returning latest job status for a document
+  - [x] Implement asynchronous processing trigger:
+    - `POST /api/v1/ingestion/{document_id}/process` returning HTTP 202 Accepted with `IngestionJobResponse`
+  - [x] Wire optional `auto_process: bool = False` query parameter on `POST /api/v1/documents/upload` for seamless single-step upload & processing
+  - [x] Author 16 comprehensive automated tests in `backend/tests/test_ingestion_orchestration.py` (175 passing backend tests total, 100% pass)
+  - [x] Full regression test run: 175 passed, 0 failed, 2 skipped
+
 - [ ] **TASK 05 — LangGraph RAG Orchestrator & State Graph**
   - [ ] Define `AgentState` TypedDict schema
   - [ ] Implement `node_query_understanding` (query re-writing with conversational history)
@@ -141,7 +155,7 @@
 
 - [ ] **TASK 06 — FastAPI Application & API Endpoints**
   - [x] Implement `/api/v1/documents/upload` endpoint (multipart PDF, DOCX, TXT upload - Completed in Task 003A)
-  - [ ] Implement `/api/v1/ingestion/{job_id}` status polling endpoint
+  - [x] Implement `/api/v1/ingestion/{job_id}` status polling endpoint (Completed in Task 003G)
   - [ ] Implement `/api/v1/documents` listing endpoint
   - [ ] Implement `/api/v1/chat` conversational query endpoint
   - [ ] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down)
