@@ -129,6 +129,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 | `GET` | `/api/v1/health` | Versioned API health check | `200 OK` |
 | `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence | `201 Created` |
 | `POST` | `/api/v1/documents/{document_id}/extract` | Retrieves binary from Supabase Storage & extracts structured text, 1-based PDF pages & DOCX/TXT units | `200 OK` |
+| `POST` | `/api/v1/documents/{document_id}/chunk` | Structure-aware document chunking preserving section hierarchy, table layouts, and provenance | `200 OK` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -142,7 +143,7 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes 90 passing automated tests across 92 test cases (100% pass rate):
+Test coverage includes 117 passing automated tests across 119 test cases (100% pass rate):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
@@ -163,6 +164,15 @@ Test coverage includes 90 passing automated tests across 92 test cases (100% pas
 - DOCX structured table extraction with Markdown grid generation and `page_number=None`.
 - Plain text UTF-8 extraction, BOM handling (`utf-8-sig`), and line break preservation.
 - Document extraction REST API endpoint (`POST /api/v1/documents/{document_id}/extract`).
+- Section-aware recursive character text splitting with configurable defaults (`CHUNK_SIZE=1000`, `CHUNK_OVERLAP=150`).
+- Priority-based separator hierarchy (headings $\to$ paragraphs $\to$ sentences $\to$ words $\to$ characters).
+- Exact 1-based PDF page provenance without cross-page merging.
+- DOCX paragraph sequence preservation with `page_number=None` (no fabricated pagination).
+- TXT text block ordering and `page_number=None`.
+- Table-aware splitting repeating column headers and separator lines across chunk splits.
+- Section hierarchy tracking (`SectionHierarchyTracker`) with breadcrumb context.
+- Forward progress guarantee, word-boundary preservation, and prevention of duplicate-only chunks.
+- Document chunking REST API endpoint (`POST /api/v1/documents/{document_id}/chunk`).
 
 ---
 
@@ -175,7 +185,7 @@ KnowBridge-AI/
 │   │   ├── api/
 │   │   │   └── routes/
 │   │   │       ├── health.py             # Health check routes
-│   │   │       └── documents.py          # Document upload & extraction routes
+│   │   │       └── documents.py          # Document upload, extract & chunk routes
 │   │   ├── core/
 │   │   │   ├── config.py                 # Pydantic v2 Settings & URI logic
 │   │   │   └── database.py               # SQLAlchemy engine, session & lifecycle
@@ -188,22 +198,27 @@ KnowBridge-AI/
 │   │   │   └── txt_parser.py             # UTF-8 BOM text block extractor
 │   │   ├── schemas/
 │   │   │   ├── document.py               # Pydantic upload request & response schemas
-│   │   │   └── extraction.py             # Pydantic ContentUnit & ExtractionResult schemas
+│   │   │   ├── extraction.py             # Pydantic ContentUnit & ExtractionResult schemas
+│   │   │   └── chunking.py               # Pydantic DocumentChunk & ChunkingResult schemas
 │   │   ├── services/
 │   │   │   ├── document_service.py       # Validation & metadata persistence
 │   │   │   ├── storage_service.py        # Supabase Storage client & cleanup
-│   │   │   └── document_extractor.py     # Extraction service orchestrator
+│   │   │   ├── document_extractor.py     # Extraction service orchestrator
+│   │   │   └── document_chunker.py       # Section-aware recursive chunking service
 │   │   └── main.py                       # FastAPI application entrypoint
 │   ├── migrations/                       # PostgreSQL DDL, HNSW index & functions
 │   ├── scripts/                          # Live integration verification scripts
 │   │   ├── verify_storage_integration.py # Live storage verification
-│   │   └── verify_extraction_integration.py # Live extraction verification
-│   ├── tests/                            # Automated test suite (92 tests)
+│   │   ├── verify_extraction_integration.py # Live extraction verification
+│   │   ├── verify_chunking.py            # Policy chunking verification
+│   │   └── inspect_chunks.py             # Interactive chunk inspector CLI & JSON export
+│   ├── tests/                            # Automated test suite (119 tests, 100% pass)
 │   │   ├── test_config.py
 │   │   ├── test_health.py
 │   │   ├── test_document_upload.py
 │   │   ├── test_storage_service.py
-│   │   └── test_document_extractor.py
+│   │   ├── test_document_extractor.py
+│   │   └── test_document_chunker.py
 │   ├── requirements.txt                  # Python dependencies
 │   ├── .env.example                      # Configuration template
 │   └── .gitignore
@@ -229,4 +244,5 @@ KnowBridge-AI/
 - [x] **Task 003A:** Document Upload API, Multi-Tier Validation & Metadata Persistence
 - [x] **Task 003B:** Supabase Storage Integration, Deterministic Paths & Compensating Cleanup
 - [x] **Task 003C:** Document Text Extraction Service (PyMuPDF, python-docx, UTF-8 BOM, Supabase Download)
-- [ ] **Task 04 / 003D:** Ingestion Engine: Chunking & Embeddings *(Pending)*
+- [x] **Task 003D:** Intelligent Document Chunking Service (Structure-Aware, Heading Hierarchy, Table Splitting, 117 Tests)
+- [ ] **Task 003E:** Embeddings Generation Engine *(Pending)*

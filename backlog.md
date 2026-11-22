@@ -29,12 +29,16 @@
     - 17 unit tests and live Supabase Storage integration verification script passing.
   - **Estimated Effort:** Completed
 
-- [ ] **STORY-402: Hierarchical Semantic Chunker**
-  - **Description:** Implement `backend/app/services/chunker.py` decomposing parsed pages into 400–600 token windows with a 50-token semantic overlap, strictly preserving page metadata.
+- [x] **STORY-402: Hierarchical Semantic & Structure-Aware Chunker [Task 003D Completed]**
+  - **Description:** Implement `backend/app/services/document_chunker.py` decomposing parsed content units into structure-aware chunks (default `CHUNK_SIZE=1000`, `CHUNK_OVERLAP=150`), preserving headings, section hierarchy breadcrumbs, 1-based PDF page provenance, and table layouts with repeated headers.
   - **Acceptance Criteria:**
-    - Chunks must never cross document-version boundaries.
-    - Each chunk record must output: `content`, `token_count`, `page_number`, `chunk_index`, and `metadata` (JSONB).
-  - **Estimated Effort:** 45 mins
+    - PDF chunks strictly preserve 1-based page numbers without cross-page merging.
+    - DOCX and TXT chunks strictly enforce `page_number=None`.
+    - Tables split row-by-row and repeat header rows across splits.
+    - Clean overlap with forward progress guarantee and complete word preservation.
+    - Endpoint `POST /api/v1/documents/{document_id}/chunk` exposes chunking result.
+    - 27 automated tests passing with 100% pass rate.
+  - **Estimated Effort:** Completed
 
 - [ ] **STORY-403: Local Sentence-Transformers Embedding Pipeline**
   - **Description:** Implement `backend/app/services/embedding.py` wrapping Hugging Face `sentence-transformers/all-MiniLM-L6-v2` running in-process on CPU.
