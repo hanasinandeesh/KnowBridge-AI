@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, the **Task 003A Document Upload API**, and **Task 003B Supabase Storage Integration**. The FastAPI backend application is integrated with Supabase PostgreSQL and private Supabase Storage (`knowledge-documents`). Uploaded PDF, DOCX, and TXT files are validated, stored permanently in Supabase Storage with unique deterministic object paths, and registered in PostgreSQL with status `'uploaded'`. A robust compensating cleanup mechanism ensures zero orphaned files if transactions fail. Connection pooling, credential sanitization, health monitoring, and 70 automated tests (100% pass rate) are fully verified.
+KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, the **Task 003A Document Upload API**, **Task 003B Supabase Storage Integration**, and **Task 003C Document Text Extraction Service**. The FastAPI backend application is integrated with Supabase PostgreSQL and private Supabase Storage (`knowledge-documents`). Uploaded PDF, DOCX, and TXT files are validated, stored permanently in Supabase Storage with unique deterministic object paths, and registered in PostgreSQL with status `'uploaded'`. A robust compensating cleanup mechanism ensures zero orphaned files if transactions fail. Document binaries are retrieved securely via server-side storage streams and parsed into structured logical units (PyMuPDF for 1-based PDF pages, python-docx for document-order paragraphs and Markdown tables, and UTF-8 TXT with BOM support). Connection pooling, credential sanitization, health monitoring, and 90 automated tests (100% pass rate) are fully verified live.
 
 ---
 
@@ -26,7 +26,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 003A: Document Upload API & Validation            │ COMPLETED   │ Upload API, 42 tests, DB  │
 │ TASK 003B: Supabase Storage Integration & File Paths   │ COMPLETED   │ Storage API, 70 tests, DB │
 │ TASK 003C: Document Text Extraction Service            │ COMPLETED   │ Parsers, 90 tests, Live   │
-│ TASK 04 / 003D: Chunking & Embeddings Engine           │ READY       │ Awaiting User Approval    │
+│ TASK 003D: Intelligent Document Chunking Service       │ COMPLETED   │ Chunker, 117 tests, Live  │
+│ TASK 003E / 04: Embeddings Generation Engine           │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
 │ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
@@ -60,7 +61,12 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 - **Framework:** FastAPI 0.111.0 on Python 3.11 with Uvicorn ASGI server.
 - **ORM & Connection Engine:** SQLAlchemy 2.0.31 with connection pooling (`QueuePool`).
 - **Database Driver:** `psycopg` 3.3.9 (`postgresql+psycopg://` dialect).
-- **Storage Service:** Server-side Supabase Storage REST API client via `httpx` (`upload_file`, `delete_file`, `file_exists`).
+- **Storage Service:** Server-side Supabase Storage REST API client via `httpx` (`upload_file`, `download_file`, `delete_file`, `file_exists`).
+- **Extraction Services & Parsers:**
+  - `PDFParser`: PyMuPDF (`pymupdf` 2.1) extracting page-by-page text with strict 1-based page numbers and boundary markers.
+  - `DOCXParser`: `python-docx` traversing body elements in exact document order with Markdown table grids and `page_number=None`.
+  - `TXTParser`: UTF-8 with BOM (`utf-8-sig`) handling and double-newline paragraph splitting.
+  - `DocumentExtractorService`: Orchestrator retrieving binaries from storage and returning standardized `DocumentExtractionResult`.
 - **Connection Pooling Parameters:**
   - `pool_pre_ping = True`: Discards closed or stale TCP sockets automatically.
   - `pool_size = 5`: Persistent pooled connections.
@@ -83,27 +89,44 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 ## 4. API Endpoints State
 
 ```
-┌────────────────────────────┬────────┬──────────────┬────────────────────────────────────────────────────────┐
-│ Endpoint                   │ Method │ Status Code  │ Description & Payload                                  │
-├────────────────────────────┼────────┼──────────────┼────────────────────────────────────────────────────────┤
-│ /health                    │ GET    │ 200 OK       │ Returns app health, project name, environment.         │
-│ /api/v1/health             │ GET    │ 200 OK       │ Versioned health probe mirror.                         │
-│ /health/db                 │ GET    │ 200 / 503    │ Executes 'SELECT 1'. Returns latency & dialect if      │
-│                            │        │              │ connected; 503 with sanitized error if disconnected.   │
-│ /api/v1/documents/upload   │ POST   │ 201 Created  │ Validates and stores PDF/DOCX/TXT in Supabase Storage  │
-│                            │        │              │ & persists metadata with storage_path in PostgreSQL.   │
-│ /                          │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
-└────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────┬────────┬──────────────┬────────────────────────────────────────────────────────┐
+│ Endpoint                              │ Method │ Status Code  │ Description & Payload                                  │
+├───────────────────────────────────────┼────────┼──────────────┼────────────────────────────────────────────────────────┤
+│ /health                               │ GET    │ 200 OK       │ Returns app health, project name, environment.         │
+│ /api/v1/health                        │ GET    │ 200 OK       │ Versioned health probe mirror.                         │
+│ /health/db                            │ GET    │ 200 / 503    │ Executes 'SELECT 1'. Returns latency & dialect if      │
+│                                       │        │              │ connected; 503 with sanitized error if disconnected.   │
+│ /api/v1/documents/upload              │ POST   │ 201 Created  │ Validates and stores PDF/DOCX/TXT in Supabase Storage  │
+│                                       │        │              │ & persists metadata with storage_path in PostgreSQL.   │
+│ /api/v1/documents/{id}/extract        │ POST   │ 200 OK       │ Downloads binary from Supabase Storage & extracts      │
+│                                       │        │              │ structured text, 1-based PDF pages & DOCX/TXT units.   │
+│ /api/v1/documents/{id}/chunk          │ POST   │ 200 OK       │ Structure-aware chunking preserving section hierarchy, │
+│                                       │        │              │ provenance, table layouts, and 1-based PDF pages.      │
+│ /                                     │ GET    │ 200 OK       │ Root service index with endpoint & docs navigation.    │
+└───────────────────────────────────────┴────────┴──────────────┴────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 5. Test Suite Verification Metrics
 
-- **Test Runner:** `pytest 9.2.0` (in `backend/.venv`)
-- **Total Tests:** 72 automated tests (70 automated unit/API tests + 2 opt-in live integration tests).
-- **Pass Rate:** 100% (70 passed in 1.26s).
+- **Test Runner:** `pytest 9.1.1` (in `backend/.venv`)
+- **Total Tests:** 119 automated tests (117 automated unit/API tests + 2 opt-in live integration tests).
+- **Pass Rate:** 100% (117 passed in 2.34s).
 - **Coverage Areas:**
+  - Multi-page PDF extraction with 1-based page numbering (`backend/tests/test_document_extractor.py`).
+  - Scanned PDF detection with zero extractable text (`ocr_supported=False`, `empty_content`).
+  - Intelligent document chunking across PDF, DOCX, TXT formats (`backend/tests/test_document_chunker.py`).
+  - Heading hierarchy, table splitting with repeated headers, and overlap boundary preservation.
+  - Blank and corrupt PDF error handling (`CorruptedDocumentError`).
+  - Password-protected PDF detection (`EncryptedDocumentError`).
+  - DOCX paragraph order preservation and heading hierarchy extraction.
+  - DOCX structured table extraction with Markdown grid generation and `page_number=None`.
+  - Plain text UTF-8 extraction, BOM handling (`utf-8-sig`), and line break preservation.
+  - Plain text binary byte rejection (null byte check).
+  - Supabase Storage async and sync binary download (`download_file`, `download_file_sync`).
+  - Supabase Storage download failure translation (`StorageDownloadError`).
+  - Document extraction REST API endpoint (`POST /api/v1/documents/{document_id}/extract`).
   - Configuration defaults and environment overrides (`backend/tests/test_config.py`).
   - Driver URI normalization and dialect conversion (`backend/tests/test_config.py`).
   - Plaintext credential redaction in telemetry properties (`backend/tests/test_config.py`).
@@ -153,9 +176,9 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 
 ## 7. Immediate Next Actions
 
-1. Awaiting user authorization to initiate **TASK 04 — Ingestion Engine & Document Processing Service**.
-2. Task 04 will introduce:
-   - PyMuPDF (`fitz`) text and layout extraction with page provenance.
+1. Awaiting user authorization to initiate **TASK 04 / 003D — Ingestion Engine: Chunking & Embeddings**.
+2. Task 003D will introduce:
+   - Token-aware hierarchical semantic chunking (400–600 tokens with 50-token overlap, preserving page and section provenance).
    - Sentence-transformers embedding service (`all-MiniLM-L6-v2`, 384 dimensions).
-   - Supabase Storage client integration for binary PDF storage.
-   - Batch chunk upsert into the `document_chunks` table.
+   - Batch insertion into `document_chunks` with `vector(384)` pgvector alignment.
+   - Ingestion status progression in `ingestion_jobs`.

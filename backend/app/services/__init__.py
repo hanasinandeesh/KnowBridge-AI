@@ -24,6 +24,10 @@ from app.services.document_extractor import (
     DocumentNotFoundError,
     get_document_extractor,
 )
+from app.services.document_chunker import (
+    DocumentChunkerService,
+    get_document_chunker,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -45,4 +49,6 @@ __all__ = [
     "DocumentExtractorService",
     "get_document_extractor",
     "DocumentNotFoundError",
+    "DocumentChunkerService",
+    "get_document_chunker",
 ]

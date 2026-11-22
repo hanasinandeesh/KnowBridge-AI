@@ -93,11 +93,27 @@
   - [x] Add 17 comprehensive unit tests in `backend/tests/test_document_extractor.py` and 3 download unit tests in `test_storage_service.py` (90 backend tests total, 100% pass)
   - [x] Add live storage extraction verification script `backend/scripts/verify_extraction_integration.py` verified with live PDF, DOCX, TXT files
 
-- [ ] **TASK 04 / 003D — Ingestion Engine: Chunking & Embeddings (Pending Approval)**
-  - [ ] Implement token-aware hierarchical chunking preserving page-level metadata (400-600 tokens)
+- [x] **TASK 003D — Intelligent Document Chunking Service (Completed)**
+  - [x] Implement recursive character text splitter with configurable defaults (`CHUNK_SIZE=1000`, `CHUNK_OVERLAP=150`)
+  - [x] Priority-based separator hierarchy: section boundaries -> paragraphs -> sentences -> words -> characters
+  - [x] Preserves exact 1-based PDF page provenance without cross-page merging
+  - [x] Preserves DOCX paragraph order, table order, unit indices, and strictly enforces `page_number=None`
+  - [x] Preserves TXT logical text block order, unit indices, and strictly enforces `page_number=None`
+  - [x] Section hierarchy tracking (`SectionHierarchyTracker`) with breadcrumbs and heading level inference
+  - [x] Table-aware chunking (`TableSplitter`) repeating headers across splits and preserving rows
+  - [x] Forward progress guarantee, word-boundary preservation, and prevention of duplicate-only chunks
+  - [x] Implement `POST /api/v1/documents/{document_id}/chunk` endpoint returning `DocumentChunkingResult`
+  - [x] Author 27 comprehensive automated tests in `backend/tests/test_document_chunker.py` (117 backend tests total, 100% pass)
+  - [x] Validated against synthetic Northstar policies (Travel, Leave, Remote/Hybrid Work)
+
+- [ ] **TASK 003E — Embeddings Generation Engine (Pending Approval)**
   - [ ] Integrate local Hugging Face `sentence-transformers/all-MiniLM-L6-v2` embedder (384d)
-  - [ ] Implement batch insertion of chunks into `document_chunks` table
-  - [ ] Implement background task queue / status tracking in `ingestion_jobs`
+  - [ ] Batch vector generation for document chunks
+  - [ ] Normalization and deterministic float embeddings validation
+
+- [ ] **TASK 003F — PostgreSQL Chunk Persistence (Pending)**
+  - [ ] Implement batch insertion of chunks and embeddings into `document_chunks` table
+  - [ ] Background task queue / status tracking in `ingestion_jobs`
 
 - [ ] **TASK 05 — LangGraph RAG Orchestrator & State Graph**
   - [ ] Define `AgentState` TypedDict schema
