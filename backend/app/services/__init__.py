@@ -28,6 +28,16 @@ from app.services.document_chunker import (
     DocumentChunkerService,
     get_document_chunker,
 )
+from app.services.embedding_service import (
+    EmbeddingDimensionMismatchError,
+    EmbeddingError,
+    EmbeddingGenerationError,
+    EmbeddingService,
+    InvalidChunkError,
+    ModelInitializationError,
+    NonFiniteVectorError,
+    get_embedding_service,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -51,4 +61,12 @@ __all__ = [
     "DocumentNotFoundError",
     "DocumentChunkerService",
     "get_document_chunker",
+    "EmbeddingService",
+    "get_embedding_service",
+    "EmbeddingError",
+    "ModelInitializationError",
+    "InvalidChunkError",
+    "EmbeddingDimensionMismatchError",
+    "NonFiniteVectorError",
+    "EmbeddingGenerationError",
 ]

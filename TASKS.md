@@ -2,7 +2,7 @@
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Architecture Lead:** Senior Software Architect & AI Engineer  
-**Status:** Task 003A Completed — Ready for Task 003B / Task 04 (Document Ingestion Engine)  
+**Status:** Task 003E Completed — Ready for Task 003F (PostgreSQL pgvector Chunk Persistence)  
 
 ---
 
@@ -106,12 +106,17 @@
   - [x] Author 27 comprehensive automated tests in `backend/tests/test_document_chunker.py` (117 backend tests total, 100% pass)
   - [x] Validated against synthetic Northstar policies (Travel, Leave, Remote/Hybrid Work)
 
-- [ ] **TASK 003E — Embeddings Generation Engine (Pending Approval)**
-  - [ ] Integrate local Hugging Face `sentence-transformers/all-MiniLM-L6-v2` embedder (384d)
-  - [ ] Batch vector generation for document chunks
-  - [ ] Normalization and deterministic float embeddings validation
+- [x] **TASK 003E — Embeddings Generation Engine (Completed)**
+  - [x] Integrate local Hugging Face `sentence-transformers/all-MiniLM-L6-v2` embedder (384d, zero API key requirement)
+  - [x] Configurable batch vector generation with thread-safe singleton model caching
+  - [x] Consistent unit L2 normalization (`normalize_embeddings=True`) for chunks and queries
+  - [x] Strict vector validation ensuring 384 finite numerical values (no NaN or Inf)
+  - [x] Retention of complete chunk provenance, section hierarchy, and physical page numbers
+  - [x] Implement `POST /api/v1/documents/{document_id}/embed` endpoint returning `DocumentEmbeddingResult`
+  - [x] Author 19 automated unit & API tests in `backend/tests/test_embedding_service.py` and live integration test in `test_embedding_integration.py` (137 backend tests total, 100% pass)
+  - [x] Author standalone verification script `backend/scripts/verify_embeddings.py` verified with real synthetic PDF, DOCX, TXT policies and live Swagger testing
 
-- [ ] **TASK 003F — PostgreSQL Chunk Persistence (Pending)**
+- [ ] **TASK 003F — PostgreSQL Chunk Persistence (Pending Approval)**
   - [ ] Implement batch insertion of chunks and embeddings into `document_chunks` table
   - [ ] Background task queue / status tracking in `ingestion_jobs`
 

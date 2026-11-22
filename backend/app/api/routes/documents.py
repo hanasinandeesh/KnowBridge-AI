@@ -13,6 +13,7 @@ from app.parsers.base import (
 )
 from app.schemas.chunking import DocumentChunkingResult
 from app.schemas.document import DocumentUploadResponse
+from app.schemas.embedding import DocumentEmbeddingResult
 from app.schemas.extraction import DocumentExtractionResult
 from app.services.document_chunker import (
     DocumentChunkerService,
@@ -22,6 +23,11 @@ from app.services.document_extractor import (
     DocumentExtractorService,
     DocumentNotFoundError,
     get_document_extractor,
+)
+from app.services.embedding_service import (
+    EmbeddingError,
+    EmbeddingService,
+    get_embedding_service,
 )
 from app.services.document_service import (
     create_document_record,
@@ -387,4 +393,157 @@ async def chunk_document(
         chunk_overlap=chunk_overlap,
     )
     return chunking_result
+
+
+@router.post(
+    "/{document_id}/embed",
+    response_model=DocumentEmbeddingResult,
+    summary="Generate Embeddings for Stored Document Chunks",
+    description=(
+        "Retrieves a document from Supabase Storage, extracts text units (Task 003C), "
+        "chunks text structure-aware (Task 003D), and generates 384-dimensional dense "
+        "vector embeddings (Task 003E) using local Sentence Transformers (all-MiniLM-L6-v2). "
+        "Preserves all chunk provenance and metadata. Does not persist embeddings to database."
+    ),
+)
+async def embed_document(
+    document_id: uuid.UUID,
+    chunk_size: Optional[int] = Query(
+        None,
+        gt=0,
+        le=10000,
+        description="Chunk size in characters (defaults to system settings if omitted)",
+    ),
+    chunk_overlap: Optional[int] = Query(
+        None,
+        ge=0,
+        le=2000,
+        description="Chunk overlap in characters (defaults to system settings if omitted)",
+    ),
+    batch_size: Optional[int] = Query(
+        None,
+        gt=0,
+        le=512,
+        description="Batch size for generating embeddings (defaults to system settings if omitted)",
+    ),
+    db: Session = Depends(get_db),
+    storage: StorageService = Depends(get_storage_service),
+    extractor: DocumentExtractorService = Depends(get_document_extractor),
+    chunker: DocumentChunkerService = Depends(get_document_chunker),
+    embedder: EmbeddingService = Depends(get_embedding_service),
+) -> DocumentEmbeddingResult:
+    """
+    Executes end-to-end extraction, chunking, and embedding generation for a stored document:
+    1. Validates document exists in PostgreSQL.
+    2. Validates chunk parameters (chunk_overlap strictly < chunk_size).
+    3. Retrieves document binary from Supabase Storage and executes structured extraction.
+    4. Generates structure-aware DocumentChunks.
+    5. Converts chunks to 384-dimensional normalized dense vector embeddings in batches.
+    6. Returns structured DocumentEmbeddingResult with full provenance.
+    """
+    logger.info(
+        "Received embedding request for document_id: %s (chunk_size=%s, chunk_overlap=%s, batch_size=%s)",
+        document_id,
+        chunk_size,
+        chunk_overlap,
+        batch_size,
+    )
+
+    # 1. Parameter validation
+    eff_size = chunk_size if chunk_size is not None else chunker.default_chunk_size
+    eff_overlap = chunk_overlap if chunk_overlap is not None else chunker.default_chunk_overlap
+    if eff_overlap >= eff_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"chunk_overlap ({eff_overlap}) must be strictly less than chunk_size ({eff_size}).",
+        )
+
+    # 2. Fetch document metadata from database
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        logger.warning("Document embedding failed: document %s not found.", document_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with ID '{document_id}' not found.",
+        )
+
+    # 3. Check storage service configuration
+    if not storage.is_configured:
+        logger.error("Storage service unconfigured during embedding for document %s", document_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage service configuration error: Supabase storage credentials are not configured.",
+        )
+
+    # 4. Download binary from Supabase Storage
+    try:
+        content_bytes = await storage.download_file(doc.storage_path)
+    except StorageDownloadError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Storage download failure for document %s: %s", document_id, sanitized_err)
+        if "not found" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Original document binary not found in storage at '{doc.storage_path}'.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to retrieve document binary from storage service.",
+        )
+
+    # 5. Extract structured text using format-specific parser
+    try:
+        extraction_result = extractor.extract_from_bytes(
+            content=content_bytes,
+            filename=doc.original_filename,
+            file_type=doc.file_type,
+            document_id=doc.id,
+            raise_on_error=True,
+        )
+    except CorruptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Corrupted document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except EncryptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.warning("Password-protected document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except UnsupportedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Unsupported document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported document format: {sanitized_err}",
+        )
+    finally:
+        del content_bytes
+
+    # 6. Generate chunks using DocumentChunkerService
+    chunking_result = chunker.chunk_document(
+        extraction_result=extraction_result,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+
+    # 7. Generate vector embeddings using EmbeddingService
+    try:
+        embedding_result = embedder.embed_document_result(
+            chunking_result=chunking_result,
+            batch_size=batch_size,
+        )
+        return embedding_result
+    except EmbeddingError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Embedding generation failure for document %s: %s", document_id, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Embedding generation failed: {sanitized_err}",
+        )
+
 

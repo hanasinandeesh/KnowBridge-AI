@@ -27,7 +27,8 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 003B: Supabase Storage Integration & File Paths   │ COMPLETED   │ Storage API, 70 tests, DB │
 │ TASK 003C: Document Text Extraction Service            │ COMPLETED   │ Parsers, 90 tests, Live   │
 │ TASK 003D: Intelligent Document Chunking Service       │ COMPLETED   │ Chunker, 117 tests, Live  │
-│ TASK 003E / 04: Embeddings Generation Engine           │ READY       │ Awaiting User Approval    │
+│ TASK 003E: Embeddings Generation Service (MiniLM)      │ COMPLETED   │ 137 tests, Live Real-Model│
+│ TASK 003F: PostgreSQL pgvector Chunk Persistence       │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
 │ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │

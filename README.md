@@ -130,6 +130,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 | `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence | `201 Created` |
 | `POST` | `/api/v1/documents/{document_id}/extract` | Retrieves binary from Supabase Storage & extracts structured text, 1-based PDF pages & DOCX/TXT units | `200 OK` |
 | `POST` | `/api/v1/documents/{document_id}/chunk` | Structure-aware document chunking preserving section hierarchy, table layouts, and provenance | `200 OK` |
+| `POST` | `/api/v1/documents/{document_id}/embed` | Generates 384-dimensional normalized dense vector embeddings using local sentence-transformers (`all-MiniLM-L6-v2`) | `200 OK` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -143,7 +144,7 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes 117 passing automated tests across 119 test cases (100% pass rate):
+Test coverage includes 137 passing automated tests across 139 test cases (100% pass rate):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
@@ -173,6 +174,14 @@ Test coverage includes 117 passing automated tests across 119 test cases (100% p
 - Section hierarchy tracking (`SectionHierarchyTracker`) with breadcrumb context.
 - Forward progress guarantee, word-boundary preservation, and prevention of duplicate-only chunks.
 - Document chunking REST API endpoint (`POST /api/v1/documents/{document_id}/chunk`).
+- Local Sentence Transformers embedding generation (`sentence-transformers/all-MiniLM-L6-v2`) producing strict 384-dimensional dense vectors.
+- Unit L2 vector normalization (`normalize_embeddings=True`) for fast dot-product cosine similarity matching.
+- Thread-safe singleton model caching preventing per-chunk or per-request model reloads.
+- Configurable batch encoding (`EMBEDDING_BATCH_SIZE=32`) with complete input-output order preservation.
+- Full chunk metadata and physical page number retention in `ChunkEmbedding`.
+- Strict validation rejecting malformed chunks, empty text, unexpected dimensions, or non-finite values (`NaN`/`Inf`).
+- Symmetrical search query embedding (`embed_query`) sharing identical model and normalization strategy.
+- Document embedding REST API endpoint (`POST /api/v1/documents/{document_id}/embed`).
 
 ---
 

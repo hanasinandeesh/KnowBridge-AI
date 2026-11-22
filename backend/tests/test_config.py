@@ -14,6 +14,11 @@ def test_default_settings():
     assert config.DB_ECHO is False
     assert config.CHUNK_SIZE == 1000
     assert config.CHUNK_OVERLAP == 150
+    assert config.EMBEDDING_MODEL_NAME == "sentence-transformers/all-MiniLM-L6-v2"
+    assert config.EMBEDDING_DIMENSION == 384
+    assert config.EMBEDDING_BATCH_SIZE == 32
+    assert config.EMBEDDING_NORMALIZE is True
+    assert config.EMBEDDING_DEVICE is None
 
 
 @pytest.mark.parametrize(
