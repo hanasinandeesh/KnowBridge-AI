@@ -70,11 +70,21 @@
   - [x] Live Swagger UI & database verification confirmed (PDF, DOCX, TXT files successfully uploaded and stored)
   - [x] Branch `feat/task-003a-document-upload-api` pushed to GitHub
 
-- [ ] **TASK 04 — Ingestion Engine & Document Processing Service (Pending Approval)**
+- [x] **TASK 003B — Supabase Storage Integration (Completed)**
+  - [x] Create server-side `StorageService` using `httpx` for private `knowledge-documents` bucket integration
+  - [x] Implement deterministic object naming structure: `documents/{document_id}/{safe_filename}`
+  - [x] Implement safe path traversal prevention and UUID validation
+  - [x] Wire `POST /api/v1/documents/upload` to store binary in Supabase Storage before DB commit
+  - [x] Implement compensating cleanup (deletes uploaded object if DB transaction fails)
+  - [x] Enhance error sanitization preventing leakage of JWT tokens, service-role keys, or passwords
+  - [x] Add standalone integration verification script `backend/scripts/verify_storage_integration.py`
+  - [x] Add 24 comprehensive unit tests in `backend/tests/test_storage_service.py` (70 backend tests total, 100% pass)
+  - [x] Live verification confirmed in Supabase Storage and PostgreSQL for PDF, DOCX, and TXT files
+
+- [ ] **TASK 04 / 003C — Ingestion Engine & Document Processing Service (Pending Approval)**
   - [ ] Implement PyMuPDF (`fitz`) parser for layout, text, tables, and page tracking
   - [ ] Implement token-aware hierarchical chunking preserving page-level metadata (400-600 tokens)
   - [ ] Integrate local Hugging Face `sentence-transformers/all-MiniLM-L6-v2` embedder (384d)
-  - [ ] Implement Supabase Storage file upload integration (`knowbridge-documents` bucket)
   - [ ] Implement batch insertion of chunks into `document_chunks` table
   - [ ] Implement background task queue / status tracking in `ingestion_jobs`
 

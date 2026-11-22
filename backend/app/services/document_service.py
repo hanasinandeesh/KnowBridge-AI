@@ -296,6 +296,7 @@ def create_document_record(
     safe_filename: str,
     file_type: str,
     doc_id: Optional[uuid.UUID] = None,
+    storage_path: Optional[str] = None,
 ) -> Document:
     """
     Creates an initial document metadata record in the database.
@@ -307,6 +308,7 @@ def create_document_record(
         safe_filename: Sanitized original filename.
         file_type: Normalized file type ('pdf', 'docx', 'txt').
         doc_id: Optional predetermined UUID (generated automatically if None).
+        storage_path: Unique Supabase Storage object path (generated if None).
 
     Returns:
         Persisted Document model instance.
@@ -317,15 +319,15 @@ def create_document_record(
     document_id = doc_id or uuid.uuid4()
     title = Path(safe_filename).stem or safe_filename
     # storage_path satisfies NOT NULL and UNIQUE constraint
-    # Reflects the target key for subsequent Supabase Storage upload in Task 04/003B
-    storage_path = f"pending/{document_id}/{safe_filename}"
+    # Corresponds to object key in Supabase Storage bucket 'knowledge-documents'
+    actual_storage_path = storage_path or f"documents/{document_id}/{safe_filename}"
 
     document = Document(
         id=document_id,
         title=title,
         original_filename=safe_filename,
         file_type=file_type,
-        storage_path=storage_path,
+        storage_path=actual_storage_path,
         category="general",
         status="uploaded",
     )

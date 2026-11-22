@@ -3,13 +3,13 @@
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Report Date:** November 22, 2026  
 **Engineering Lead:** Senior Python Backend Engineer & AI Architect  
-**Current Milestone:** Task 003A Completed — Ready for Task 003B / Task 04 (Ingestion Engine & Storage)  
+**Current Milestone:** Task 003B Completed — Ready for Task 003C / Task 04 (Ingestion Engine & Document Processing)  
 
 ---
 
 ## 1. Executive Summary
 
-KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, and the **Task 003A Document Upload API**. The FastAPI backend application is integrated with Supabase PostgreSQL via SQLAlchemy 2.0 and the modern `psycopg` (v3) driver. The new `POST /api/v1/documents/upload` endpoint provides strict multi-layer validation (path traversal defense, MIME checking, size limits, and magic-byte signature validation for PDF, DOCX, and TXT files) and persists initial document records directly into Supabase PostgreSQL with status `'uploaded'`. Connection lifecycle management, connection pooling, credential sanitization, health monitoring endpoints, and comprehensive automated test suites (42 tests, 100% pass rate) are fully verified.
+KnowBridge AI has completed foundational specification, system architecture, database schema, backend infrastructure, the **Task 003A Document Upload API**, and **Task 003B Supabase Storage Integration**. The FastAPI backend application is integrated with Supabase PostgreSQL and private Supabase Storage (`knowledge-documents`). Uploaded PDF, DOCX, and TXT files are validated, stored permanently in Supabase Storage with unique deterministic object paths, and registered in PostgreSQL with status `'uploaded'`. A robust compensating cleanup mechanism ensures zero orphaned files if transactions fail. Connection pooling, credential sanitization, health monitoring, and 70 automated tests (100% pass rate) are fully verified.
 
 ---
 
@@ -24,9 +24,10 @@ KnowBridge AI has completed foundational specification, system architecture, dat
 │ TASK 02A: Design & Implement Supabase Database         │ COMPLETED   │ Migrations, HNSW, DDL     │
 │ TASK 02B: FastAPI & Supabase PostgreSQL Integration    │ COMPLETED   │ SQLAlchemy, Health APIs   │
 │ TASK 003A: Document Upload API & Validation            │ COMPLETED   │ Upload API, 42 tests, DB  │
-│ TASK 04: Ingestion Engine & Document Processing        │ READY       │ Awaiting User Approval    │
+│ TASK 003B: Supabase Storage Integration & File Paths   │ COMPLETED   │ Storage API, 70 tests, DB │
+│ TASK 04 / 003C: Ingestion Engine & Processing Service  │ READY       │ Awaiting User Approval    │
 │ TASK 05: LangGraph RAG Orchestrator                    │ PENDING     │ Blocked by Task 04        │
-│ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3A)  │
+│ TASK 06: FastAPI API Endpoints                         │ IN PROGRESS │ Upload API complete (3B)  │
 │ TASK 07: React Frontend SPA                            │ PENDING     │ Blocked by Task 06        │
 │ TASK 08: Evaluation (RAGAS) & Observability (Langfuse) │ PENDING     │ Blocked by Task 06        │
 │ TASK 09: Production Deployment & E2E Validation        │ PENDING     │ Blocked by Task 07 & 08   │
