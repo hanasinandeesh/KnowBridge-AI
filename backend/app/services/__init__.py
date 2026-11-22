@@ -11,12 +11,18 @@ from app.services.document_service import (
 from app.services.storage_service import (
     StorageConfigurationError,
     StorageDeleteError,
+    StorageDownloadError,
     StorageError,
     StorageService,
     StorageUploadError,
     generate_storage_path,
     get_content_type,
     get_storage_service,
+)
+from app.services.document_extractor import (
+    DocumentExtractorService,
+    DocumentNotFoundError,
+    get_document_extractor,
 )
 
 __all__ = [
@@ -35,4 +41,8 @@ __all__ = [
     "StorageConfigurationError",
     "StorageUploadError",
     "StorageDeleteError",
+    "StorageDownloadError",
+    "DocumentExtractorService",
+    "get_document_extractor",
+    "DocumentNotFoundError",
 ]

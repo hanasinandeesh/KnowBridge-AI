@@ -323,3 +323,53 @@ def test_sync_upload_and_delete_success(configured_service: StorageService):
 
         del_res = configured_service.delete_file_sync(path)
         assert del_res is True
+
+
+# ===========================================================================
+# 7. StorageService Download Tests
+# ===========================================================================
+
+@pytest.mark.anyio
+async def test_download_file_success(configured_service: StorageService):
+    """Validates successful download_file returns binary content."""
+    mock_response = MagicMock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.content = b"%PDF-1.4 sample binary"
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+
+        path = "documents/test-uuid/document.pdf"
+        data = await configured_service.download_file(path)
+        assert data == b"%PDF-1.4 sample binary"
+        mock_get.assert_called_once()
+
+
+@pytest.mark.anyio
+async def test_download_file_404_raises_storage_download_error(configured_service: StorageService):
+    """Validates HTTP 404 on download raises StorageDownloadError."""
+    from app.services.storage_service import StorageDownloadError
+
+    mock_response = MagicMock(spec=httpx.Response)
+    mock_response.status_code = 404
+    mock_response.text = "Object Not Found"
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+
+        with pytest.raises(StorageDownloadError) as exc_info:
+            await configured_service.download_file("documents/test-uuid/missing.pdf")
+        assert "not found" in str(exc_info.value).lower()
+
+
+def test_download_file_sync_success(configured_service: StorageService):
+    """Validates synchronous download_file_sync returns bytes."""
+    mock_response = MagicMock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.content = b"Sync text content"
+
+    with patch("httpx.Client.get") as mock_get:
+        mock_get.return_value = mock_response
+
+        data = configured_service.download_file_sync("documents/test/sample.txt")
+        assert data == b"Sync text content"

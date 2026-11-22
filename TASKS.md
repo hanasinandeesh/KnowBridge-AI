@@ -81,8 +81,19 @@
   - [x] Add 24 comprehensive unit tests in `backend/tests/test_storage_service.py` (70 backend tests total, 100% pass)
   - [x] Live verification confirmed in Supabase Storage and PostgreSQL for PDF, DOCX, and TXT files
 
-- [ ] **TASK 04 / 003C — Ingestion Engine & Document Processing Service (Pending Approval)**
-  - [ ] Implement PyMuPDF (`fitz`) parser for layout, text, tables, and page tracking
+- [x] **TASK 003C — Document Text Extraction Service (Completed)**
+  - [x] Implement PyMuPDF (`fitz`) parser extracting text page-by-page with exact 1-based page numbers and boundaries
+  - [x] Detect empty and scanned pages without claiming OCR support (`ocr_supported=False`, `empty_content` status)
+  - [x] Implement `python-docx` parser extracting paragraphs and tables in exact document order with Markdown table grids
+  - [x] Preserve heading hierarchy without fabricating DOCX page numbers (`page_number=None`, `total_pages=None`)
+  - [x] Implement UTF-8 plain text parser supporting BOM (`utf-8-sig`) and safe decoding without fabricating pages
+  - [x] Extend `StorageService` with `download_file` (async) and `download_file_sync` (sync) from private Supabase Storage bucket
+  - [x] Implement modular `DocumentExtractorService` with format routing, exception handling, and structured output
+  - [x] Implement `POST /api/v1/documents/{document_id}/extract` test & inspection endpoint returning `DocumentExtractionResult`
+  - [x] Add 17 comprehensive unit tests in `backend/tests/test_document_extractor.py` and 3 download unit tests in `test_storage_service.py` (90 backend tests total, 100% pass)
+  - [x] Add live storage extraction verification script `backend/scripts/verify_extraction_integration.py` verified with live PDF, DOCX, TXT files
+
+- [ ] **TASK 04 / 003D — Ingestion Engine: Chunking & Embeddings (Pending Approval)**
   - [ ] Implement token-aware hierarchical chunking preserving page-level metadata (400-600 tokens)
   - [ ] Integrate local Hugging Face `sentence-transformers/all-MiniLM-L6-v2` embedder (384d)
   - [ ] Implement batch insertion of chunks into `document_chunks` table
