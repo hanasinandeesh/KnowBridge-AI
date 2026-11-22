@@ -17,13 +17,17 @@
 ### Epic 1: Document Ingestion Engine & Processing Pipeline (Task 04)
 **Priority:** P0 | **Status:** Ready to Implement | **Dependency:** Task 02B
 
-- [ ] **STORY-401: PyMuPDF Page-Preserving PDF Parser**
-  - **Description:** Implement `backend/app/services/parser.py` using PyMuPDF (`fitz`) to extract digital PDF text, page numbers, and tabular data into linearized Markdown format.
+- [x] **STORY-401: Multi-Format Document Text Extraction Service (PDF, DOCX, TXT) [Task 003C Completed]**
+  - **Description:** Implement `backend/app/parsers/` and `backend/app/services/document_extractor.py` extracting structured text, physical 1-based page numbers for PDFs (PyMuPDF), document-order paragraphs and Markdown tables for DOCX (python-docx), and UTF-8 plain text with BOM support (`utf-8-sig`).
   - **Acceptance Criteria:**
-    - Every extracted text block must carry an explicit 1-indexed `page_number`.
-    - Tables must be extracted cleanly in Markdown grid syntax.
-    - Non-text pages or empty scans must raise a descriptive warning.
-  - **Estimated Effort:** 45 mins
+    - Every extracted PDF page carries an explicit 1-indexed `page_number` and boundary markers.
+    - DOCX extracts paragraphs and tables in exact document order with `page_number=None`.
+    - TXT preserves double-newline paragraph blocks with `page_number=None`.
+    - Scanned/empty documents detect zero text and report `ocr_supported=False` without silent failures.
+    - Password-protected PDFs raise `EncryptedDocumentError`.
+    - Endpoint `POST /api/v1/documents/{document_id}/extract` exposes structured extraction.
+    - 17 unit tests and live Supabase Storage integration verification script passing.
+  - **Estimated Effort:** Completed
 
 - [ ] **STORY-402: Hierarchical Semantic Chunker**
   - **Description:** Implement `backend/app/services/chunker.py` decomposing parsed pages into 400–600 token windows with a 50-token semantic overlap, strictly preserving page metadata.

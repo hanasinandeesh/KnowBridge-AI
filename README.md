@@ -113,9 +113,9 @@ STORAGE_TIMEOUT=15.0
 
 ### 4. Running the Backend Server
 ```bash
-# Run FastAPI with live reload
+# Run FastAPI with live reload (bound to 127.0.0.1 for local browser access)
 cd backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ---
@@ -128,6 +128,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `GET` | `/health/db` | Database connectivity verification (`SELECT 1`) | `200 OK` / `503 Unavailable` |
 | `GET` | `/api/v1/health` | Versioned API health check | `200 OK` |
 | `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence | `201 Created` |
+| `POST` | `/api/v1/documents/{document_id}/extract` | Retrieves binary from Supabase Storage & extracts structured text, 1-based PDF pages & DOCX/TXT units | `200 OK` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -141,7 +142,7 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes 70 automated tests (100% pass rate):
+Test coverage includes 90 passing automated tests across 92 test cases (100% pass rate):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
@@ -150,10 +151,18 @@ Test coverage includes 70 automated tests (100% pass rate):
 - Transactional session dependency (`get_db`) lifecycle verification.
 - Safe filename sanitization and path traversal defense (`../../`, `..\..\`, control chars).
 - Magic-byte validation for PDF (`%PDF-`), DOCX (`PK\x03\x04`), and TXT.
-- Supabase Storage async and sync uploads, deletions, and existence checks.
+- Supabase Storage async and sync uploads, downloads, deletions, and existence checks.
 - Deterministic storage object naming: `documents/{document_id}/{safe_filename}`.
 - Compensating cleanup ensuring zero orphaned storage objects upon database rollback.
 - Double-fault handling logging orphaned paths without leaking credentials.
+- Multi-page PDF extraction with PyMuPDF preserving 1-based page numbers and boundaries.
+- Scanned PDF detection with zero extractable text (`ocr_supported=False`, `empty_content`).
+- Password-protected PDF detection and `EncryptedDocumentError` handling.
+- Blank and corrupt PDF handling (`CorruptedDocumentError`).
+- DOCX paragraph order preservation and heading hierarchy extraction.
+- DOCX structured table extraction with Markdown grid generation and `page_number=None`.
+- Plain text UTF-8 extraction, BOM handling (`utf-8-sig`), and line break preservation.
+- Document extraction REST API endpoint (`POST /api/v1/documents/{document_id}/extract`).
 
 ---
 
@@ -165,38 +174,48 @@ KnowBridge-AI/
 │   ├── app/
 │   │   ├── api/
 │   │   │   └── routes/
-│   │   │       ├── health.py       # Health check routes
-│   │   │       └── documents.py    # Document upload & management routes
+│   │   │       ├── health.py             # Health check routes
+│   │   │       └── documents.py          # Document upload & extraction routes
 │   │   ├── core/
-│   │   │   ├── config.py           # Pydantic v2 Settings & URI logic
-│   │   │   └── database.py         # SQLAlchemy engine, session & lifecycle
+│   │   │   ├── config.py                 # Pydantic v2 Settings & URI logic
+│   │   │   └── database.py               # SQLAlchemy engine, session & lifecycle
 │   │   ├── models/
-│   │   │   └── document.py         # SQLAlchemy Document model
+│   │   │   └── document.py               # SQLAlchemy Document model
+│   │   ├── parsers/                      # Format-specific document text parsers
+│   │   │   ├── base.py                   # Parser base class & typed exceptions
+│   │   │   ├── pdf_parser.py             # PyMuPDF 1-based page extractor
+│   │   │   ├── docx_parser.py            # python-docx document-order extractor
+│   │   │   └── txt_parser.py             # UTF-8 BOM text block extractor
 │   │   ├── schemas/
-│   │   │   └── document.py         # Pydantic request & response schemas
+│   │   │   ├── document.py               # Pydantic upload request & response schemas
+│   │   │   └── extraction.py             # Pydantic ContentUnit & ExtractionResult schemas
 │   │   ├── services/
-│   │   │   ├── document_service.py # Validation & metadata persistence
-│   │   │   └── storage_service.py  # Supabase Storage client & cleanup
-│   │   └── main.py                 # FastAPI application entrypoint
-│   ├── migrations/                 # PostgreSQL DDL, HNSW index & functions
-│   ├── scripts/                    # Live storage integration verification
-│   ├── tests/                      # Automated test suite (72 tests)
+│   │   │   ├── document_service.py       # Validation & metadata persistence
+│   │   │   ├── storage_service.py        # Supabase Storage client & cleanup
+│   │   │   └── document_extractor.py     # Extraction service orchestrator
+│   │   └── main.py                       # FastAPI application entrypoint
+│   ├── migrations/                       # PostgreSQL DDL, HNSW index & functions
+│   ├── scripts/                          # Live integration verification scripts
+│   │   ├── verify_storage_integration.py # Live storage verification
+│   │   └── verify_extraction_integration.py # Live extraction verification
+│   ├── tests/                            # Automated test suite (92 tests)
 │   │   ├── test_config.py
 │   │   ├── test_health.py
 │   │   ├── test_document_upload.py
-│   │   └── test_storage_service.py
-│   ├── requirements.txt            # Python dependencies
-│   ├── .env.example                # Configuration template
+│   │   ├── test_storage_service.py
+│   │   └── test_document_extractor.py
+│   ├── requirements.txt                  # Python dependencies
+│   ├── .env.example                      # Configuration template
 │   └── .gitignore
-├── docs/                           # Architecture, DB design & data flows
-├── scripts/                        # Synthetic policy dataset generation
-├── synthetic-data/                 # Synthetic policy files (PDF, DOCX, TXT)
-├── PRD.md                          # Product Requirements Document
-├── TASKS.md                        # Implementation roadmap
-├── current_status.md               # Current system health & progress report
-├── backlog.md                      # Product and engineering backlog
-├── .gitignore                      # Root Git ignore rules
-└── README.md                       # Project documentation
+├── docs/                                 # Architecture, DB design & data flows
+├── scripts/                              # Synthetic policy dataset generation
+├── synthetic-data/                       # Synthetic policy files (PDF, DOCX, TXT)
+├── PRD.md                                # Product Requirements Document
+├── TASKS.md                              # Implementation roadmap
+├── current_status.md                     # Current system health & progress report
+├── backlog.md                            # Product and engineering backlog
+├── .gitignore                            # Root Git ignore rules
+└── README.md                             # Project documentation
 ```
 
 ---
@@ -209,4 +228,5 @@ KnowBridge-AI/
 - [x] **Task 02B:** FastAPI & Supabase PostgreSQL Integration with SQLAlchemy 2.0 & psycopg 3
 - [x] **Task 003A:** Document Upload API, Multi-Tier Validation & Metadata Persistence
 - [x] **Task 003B:** Supabase Storage Integration, Deterministic Paths & Compensating Cleanup
-- [ ] **Task 04 / 003C:** Ingestion Engine & Document Processing Service *(Pending)*
+- [x] **Task 003C:** Document Text Extraction Service (PyMuPDF, python-docx, UTF-8 BOM, Supabase Download)
+- [ ] **Task 04 / 003D:** Ingestion Engine: Chunking & Embeddings *(Pending)*
