@@ -4,13 +4,26 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db, sanitize_error_message
+from app.models.document import Document
+from app.parsers.base import (
+    CorruptedDocumentError,
+    EncryptedDocumentError,
+    UnsupportedDocumentError,
+)
 from app.schemas.document import DocumentUploadResponse
+from app.schemas.extraction import DocumentExtractionResult
+from app.services.document_extractor import (
+    DocumentExtractorService,
+    DocumentNotFoundError,
+    get_document_extractor,
+)
 from app.services.document_service import (
     create_document_record,
     process_and_validate_upload,
 )
 from app.services.storage_service import (
     StorageConfigurationError,
+    StorageDownloadError,
     StorageService,
     StorageUploadError,
     generate_storage_path,
@@ -145,3 +158,97 @@ async def upload_document(
         status=document.status,
         storage_path=document.storage_path,
     )
+
+
+@router.post(
+    "/{document_id}/extract",
+    response_model=DocumentExtractionResult,
+    status_code=status.HTTP_200_OK,
+    summary="Extract Structured Document Text",
+    description=(
+        "Retrieves the original document binary from private Supabase Storage "
+        "and extracts structured text, preserving page numbers for PDFs, "
+        "logical content units (paragraphs and tables) for DOCX, and text blocks for TXT."
+    ),
+)
+async def extract_document_text(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    storage: StorageService = Depends(get_storage_service),
+    extractor: DocumentExtractorService = Depends(get_document_extractor),
+) -> DocumentExtractionResult:
+    """
+    Executes structured text extraction for an uploaded enterprise document:
+    1. Resolves document record from PostgreSQL by document_id.
+    2. Downloads original binary from Supabase Storage bucket 'knowledge-documents'.
+    3. Parses content using PyMuPDF (PDF), python-docx (DOCX), or UTF-8 text parser (TXT).
+    4. Returns structured DocumentExtractionResult preserving page numbers and document structure.
+    """
+    logger.info("Received extraction request for document_id: %s", document_id)
+
+    # 1. Fetch document metadata from database
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        logger.warning("Document extraction failed: document %s not found.", document_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with ID '{document_id}' not found.",
+        )
+
+    # 2. Check storage service configuration
+    if not storage.is_configured:
+        logger.error("Storage service unconfigured during extraction for document %s", document_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage service configuration error: Supabase storage credentials are not configured.",
+        )
+
+    # 3. Download binary from Supabase Storage
+    try:
+        content_bytes = await storage.download_file(doc.storage_path)
+    except StorageDownloadError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Storage download failure for document %s: %s", document_id, sanitized_err)
+        if "not found" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Original document binary not found in storage at '{doc.storage_path}'.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to retrieve document binary from storage service.",
+        )
+
+    # 4. Extract structured text using format-specific parser
+    try:
+        result = extractor.extract_from_bytes(
+            content=content_bytes,
+            filename=doc.original_filename,
+            file_type=doc.file_type,
+            document_id=doc.id,
+            raise_on_error=True,
+        )
+        return result
+    except CorruptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Corrupted document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except EncryptedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.warning("Password-protected document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {sanitized_err}",
+        )
+    except UnsupportedDocumentError as exc:
+        sanitized_err = sanitize_error_message(str(exc))
+        logger.error("Unsupported document %s ('%s'): %s", document_id, doc.original_filename, sanitized_err)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported document format: {sanitized_err}",
+        )
+    finally:
+        del content_bytes

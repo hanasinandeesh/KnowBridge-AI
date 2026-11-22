@@ -40,6 +40,11 @@ class StorageDeleteError(StorageError):
     pass
 
 
+class StorageDownloadError(StorageError):
+    """Raised when downloading an object from Supabase Storage fails."""
+    pass
+
+
 def generate_storage_path(document_id: uuid.UUID | str, safe_filename: str) -> str:
     """
     Generates a deterministic, unique, and safe storage object path.
@@ -348,6 +353,91 @@ class StorageService:
             )
             return False
 
+    async def download_file(self, object_path: str) -> bytes:
+        """
+        Downloads a file binary from the private Supabase Storage bucket.
+        Used for document text extraction and ingestion.
+
+        Args:
+            object_path: Path of the object to download (e.g. documents/{id}/{filename}).
+
+        Returns:
+            The raw binary bytes of the file.
+
+        Raises:
+            StorageConfigurationError: If storage credentials are unconfigured.
+            StorageDownloadError: If download fails due to network, server error, or missing object.
+        """
+        self._validate_configuration()
+
+        cleaned_path = object_path.lstrip("/")
+        url = self._build_object_url(cleaned_path)
+        headers = self._get_headers()
+
+        logger.info(
+            "Downloading file binary from Supabase Storage: bucket='%s', path='%s'",
+            self.bucket_name,
+            cleaned_path,
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url, headers=headers)
+
+            if response.status_code == 200:
+                logger.info(
+                    "Successfully downloaded object from Supabase Storage: bucket='%s', path='%s' (%d bytes)",
+                    self.bucket_name,
+                    cleaned_path,
+                    len(response.content),
+                )
+                return response.content
+
+            if response.status_code == 404:
+                logger.warning(
+                    "Storage object not found at '%s' in bucket '%s'",
+                    cleaned_path,
+                    self.bucket_name,
+                )
+                raise StorageDownloadError(
+                    f"Storage object not found at '{cleaned_path}' in bucket '{self.bucket_name}'."
+                )
+
+            sanitized_body = sanitize_error_message(response.text)
+            logger.error(
+                "Supabase Storage download failed with HTTP %d for path '%s': %s",
+                response.status_code,
+                cleaned_path,
+                sanitized_body,
+            )
+            raise StorageDownloadError(
+                f"Storage download failed with HTTP status {response.status_code}."
+            )
+
+        except StorageDownloadError:
+            raise
+
+        except httpx.TimeoutException as exc:
+            logger.error(
+                "Timeout connecting to Supabase Storage during download of '%s' (%ss timeout)",
+                cleaned_path,
+                self.timeout,
+            )
+            raise StorageDownloadError(
+                "Storage service request timed out during document download."
+            ) from exc
+
+        except httpx.RequestError as exc:
+            sanitized_err = sanitize_error_message(str(exc))
+            logger.error(
+                "Network connection error downloading '%s' from Supabase Storage: %s",
+                cleaned_path,
+                sanitized_err,
+            )
+            raise StorageDownloadError(
+                "Network error connecting to Supabase Storage service."
+            ) from exc
+
     def upload_file_sync(
         self,
         object_path: str,
@@ -420,6 +510,56 @@ class StorageService:
                 sanitize_error_message(str(exc)),
             )
             return False
+
+    def download_file_sync(self, object_path: str) -> bytes:
+        """
+        Synchronous version of download_file for scripts, workers, and testing.
+
+        Args:
+            object_path: Path of the object to download.
+
+        Returns:
+            The raw binary bytes of the file.
+
+        Raises:
+            StorageConfigurationError: If storage credentials are unconfigured.
+            StorageDownloadError: If download fails due to network, server error, or missing object.
+        """
+        self._validate_configuration()
+        cleaned_path = object_path.lstrip("/")
+        url = self._build_object_url(cleaned_path)
+        headers = self._get_headers()
+
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.get(url, headers=headers)
+
+            if response.status_code == 200:
+                return response.content
+
+            if response.status_code == 404:
+                raise StorageDownloadError(
+                    f"Storage object not found at '{cleaned_path}' in bucket '{self.bucket_name}'."
+                )
+
+            sanitized_body = sanitize_error_message(response.text)
+            raise StorageDownloadError(
+                f"Storage download failed with HTTP status {response.status_code}: {sanitized_body}"
+            )
+
+        except StorageDownloadError:
+            raise
+
+        except httpx.TimeoutException as exc:
+            raise StorageDownloadError(
+                "Storage service request timed out during document download."
+            ) from exc
+
+        except httpx.RequestError as exc:
+            sanitized_err = sanitize_error_message(str(exc))
+            raise StorageDownloadError(
+                f"Network error connecting to Supabase Storage service: {sanitized_err}"
+            ) from exc
 
 
 @lru_cache
