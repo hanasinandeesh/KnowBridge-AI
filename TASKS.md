@@ -2,7 +2,7 @@
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Architecture Lead:** Senior Software Architect & AI Engineer  
-**Status:** Task 003E Completed — Ready for Task 003F (PostgreSQL pgvector Chunk Persistence)  
+**Status:** Task 003F Completed — Ready for Task 003G (Ingestion Orchestration / Task 04)  
 
 ---
 
@@ -116,9 +116,17 @@
   - [x] Author 19 automated unit & API tests in `backend/tests/test_embedding_service.py` and live integration test in `test_embedding_integration.py` (137 backend tests total, 100% pass)
   - [x] Author standalone verification script `backend/scripts/verify_embeddings.py` verified with real synthetic PDF, DOCX, TXT policies and live Swagger testing
 
-- [ ] **TASK 003F — PostgreSQL Chunk Persistence (Pending Approval)**
-  - [ ] Implement batch insertion of chunks and embeddings into `document_chunks` table
-  - [ ] Background task queue / status tracking in `ingestion_jobs`
+- [x] **TASK 003F — PostgreSQL Chunk Persistence (Completed)**
+  - [x] Define SQLAlchemy models for `DocumentVersion`, `DocumentChunk`, `IngestionJob` matching live Supabase schema
+  - [x] Integrate `pgvector.sqlalchemy.Vector(384)` with native HNSW cosine distance support
+  - [x] Implement `ChunkPersistenceService` (`backend/app/services/chunk_persistence.py`)
+  - [x] Document version resolution: check existing `is_current`, safe extraction from filename/text, avoid duplicates
+  - [x] Column mapping: `document_version_id`, `chunk_index`, `page_number` (1-based for PDF, NULL for DOCX/TXT), `section_title`, `chunk_text`, `embedding` (384d), `embedding_model`, `token_count`, `metadata` (JSONB)
+  - [x] Idempotent reprocessing: single-transaction deletion and replacement of version chunks
+  - [x] Ingestion job tracking: `pending` -> `processing` -> `completed` / `failed` with sanitized error redaction
+  - [x] Implement `POST /api/v1/documents/{document_id}/persist` endpoint returning `DocumentPersistenceResponse`
+  - [x] Author 22 automated tests in `backend/tests/test_chunk_persistence.py` (159 passing backend tests total, 100% pass)
+  - [x] Live Supabase verification: processed 3 synthetic documents (PDF, DOCX, TXT), confirmed 56 chunks, 384d vectors, live idempotency, and rollback safety
 
 - [ ] **TASK 05 — LangGraph RAG Orchestrator & State Graph**
   - [ ] Define `AgentState` TypedDict schema

@@ -38,6 +38,14 @@ from app.services.embedding_service import (
     NonFiniteVectorError,
     get_embedding_service,
 )
+from app.services.chunk_persistence import (
+    AlignmentError,
+    ChunkPersistenceService,
+    DocumentVersionResolutionError,
+    EmbeddingValidationError,
+    PersistenceError,
+    get_chunk_persistence_service,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -69,4 +77,10 @@ __all__ = [
     "EmbeddingDimensionMismatchError",
     "NonFiniteVectorError",
     "EmbeddingGenerationError",
+    "ChunkPersistenceService",
+    "get_chunk_persistence_service",
+    "PersistenceError",
+    "DocumentVersionResolutionError",
+    "EmbeddingValidationError",
+    "AlignmentError",
 ]

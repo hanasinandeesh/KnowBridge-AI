@@ -3,6 +3,7 @@ from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
 from app.schemas.document import DocumentUploadResponse
 from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult
 from app.schemas.extraction import ContentUnit, DocumentExtractionResult
+from app.schemas.persistence import DocumentPersistenceRequest, DocumentPersistenceResponse
 
 __all__ = [
     "DocumentUploadResponse",
@@ -12,4 +13,6 @@ __all__ = [
     "DocumentChunkingResult",
     "ChunkEmbedding",
     "DocumentEmbeddingResult",
+    "DocumentPersistenceRequest",
+    "DocumentPersistenceResponse",
 ]
