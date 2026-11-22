@@ -127,10 +127,14 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 | `GET` | `/health` | Core application health probe | `200 OK` |
 | `GET` | `/health/db` | Database connectivity verification (`SELECT 1`) | `200 OK` / `503 Unavailable` |
 | `GET` | `/api/v1/health` | Versioned API health check | `200 OK` |
-| `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence | `201 Created` |
+| `POST` | `/api/v1/documents/upload` | Multipart document upload, validation (PDF, DOCX, TXT) & Supabase Storage persistence (optional `auto_process=true`) | `201 Created` |
 | `POST` | `/api/v1/documents/{document_id}/extract` | Retrieves binary from Supabase Storage & extracts structured text, 1-based PDF pages & DOCX/TXT units | `200 OK` |
 | `POST` | `/api/v1/documents/{document_id}/chunk` | Structure-aware document chunking preserving section hierarchy, table layouts, and provenance | `200 OK` |
 | `POST` | `/api/v1/documents/{document_id}/embed` | Generates 384-dimensional normalized dense vector embeddings using local sentence-transformers (`all-MiniLM-L6-v2`) | `200 OK` |
+| `POST` | `/api/v1/documents/{document_id}/persist` | Extracts, chunks, embeds, and persists into Supabase PostgreSQL `document_chunks` table via `pgvector` | `200 OK` |
+| `POST` | `/api/v1/ingestion/{document_id}/process` | Triggers asynchronous background ingestion coordinator with concurrency guard | `202 Accepted` |
+| `GET` | `/api/v1/ingestion/{job_id}` | Polling endpoint for ingestion job status, progress metrics, and timestamps | `200 OK` / `404 Not Found` |
+| `GET` | `/api/v1/ingestion/document/{document_id}` | Retrieves latest ingestion job for a specific document | `200 OK` / `404 Not Found` |
 | `GET` | `/docs` | Interactive Swagger API documentation | `200 OK` |
 | `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
 
@@ -144,7 +148,7 @@ Execute the automated test suite using `pytest`:
 python -m pytest backend/tests -v
 ```
 
-Test coverage includes 159 passing automated tests across 161 test cases (100% pass rate):
+Test coverage includes 175 passing automated tests across 177 test cases (100% pass rate, 2 skipped live integration tests):
 - Pydantic v2 application settings validation and credential redaction.
 - Dynamic URI dialect conversion (`postgresql://` $\to$ `postgresql+psycopg://`).
 - Password URL-encoding for complex symbols.
@@ -187,6 +191,12 @@ Test coverage includes 159 passing automated tests across 161 test cases (100% p
 - Idempotent reprocessing via atomic single-transaction deletion and replacement of chunks for a version.
 - Ingestion job lifecycle tracking (`IngestionJob`) across `pending`, `processing`, `completed`, and `failed` states.
 - Document persistence REST API endpoint (`POST /api/v1/documents/{document_id}/persist`).
+- End-to-end background ingestion coordinator (`IngestionService`) orchestrating extraction, chunking, embedding, and atomic persistence.
+- Dedicated database session lifecycle via `SessionLocal()` running in background workers.
+- Ingestion status polling (`GET /api/v1/ingestion/{job_id}`) and document latest job resolution (`GET /api/v1/ingestion/document/{document_id}`).
+- Asynchronous job trigger (`POST /api/v1/ingestion/{document_id}/process`) returning HTTP 202 Accepted.
+- Concurrency guard preventing duplicate overlapping background runs on the same document.
+- Credential and token sanitization in `ingestion_jobs.error_message`.
 
 ---
 
@@ -199,12 +209,16 @@ KnowBridge-AI/
 │   │   ├── api/
 │   │   │   └── routes/
 │   │   │       ├── health.py             # Health check routes
-│   │   │       └── documents.py          # Document upload, extract & chunk routes
+│   │   │       ├── documents.py          # Document upload, extract, chunk, embed & persist routes
+│   │   │       └── ingestion.py          # Ingestion trigger & status polling routes
 │   │   ├── core/
 │   │   │   ├── config.py                 # Pydantic v2 Settings & URI logic
 │   │   │   └── database.py               # SQLAlchemy engine, session & lifecycle
 │   │   ├── models/
-│   │   │   └── document.py               # SQLAlchemy Document model
+│   │   │   ├── document.py               # SQLAlchemy Document model
+│   │   │   ├── document_version.py       # SQLAlchemy DocumentVersion model
+│   │   │   ├── document_chunk.py         # SQLAlchemy DocumentChunk model (pgvector 384d)
+│   │   │   └── ingestion_job.py          # SQLAlchemy IngestionJob model
 │   │   ├── parsers/                      # Format-specific document text parsers
 │   │   │   ├── base.py                   # Parser base class & typed exceptions
 │   │   │   ├── pdf_parser.py             # PyMuPDF 1-based page extractor
@@ -213,26 +227,37 @@ KnowBridge-AI/
 │   │   ├── schemas/
 │   │   │   ├── document.py               # Pydantic upload request & response schemas
 │   │   │   ├── extraction.py             # Pydantic ContentUnit & ExtractionResult schemas
-│   │   │   └── chunking.py               # Pydantic DocumentChunk & ChunkingResult schemas
+│   │   │   ├── chunking.py               # Pydantic DocumentChunk & ChunkingResult schemas
+│   │   │   ├── embedding.py              # Pydantic EmbeddingResult schemas
+│   │   │   ├── persistence.py            # Pydantic PersistenceResponse schemas
+│   │   │   └── ingestion.py              # Pydantic IngestionJobResponse schemas
 │   │   ├── services/
 │   │   │   ├── document_service.py       # Validation & metadata persistence
 │   │   │   ├── storage_service.py        # Supabase Storage client & cleanup
 │   │   │   ├── document_extractor.py     # Extraction service orchestrator
-│   │   │   └── document_chunker.py       # Section-aware recursive chunking service
+│   │   │   ├── document_chunker.py       # Section-aware recursive chunking service
+│   │   │   ├── embedding_service.py      # Local Sentence-Transformers MiniLM embedder
+│   │   │   ├── chunk_persistence.py      # Atomic pgvector database persistence service
+│   │   │   └── ingestion_service.py      # Asynchronous end-to-end ingestion orchestrator
 │   │   └── main.py                       # FastAPI application entrypoint
 │   ├── migrations/                       # PostgreSQL DDL, HNSW index & functions
 │   ├── scripts/                          # Live integration verification scripts
 │   │   ├── verify_storage_integration.py # Live storage verification
 │   │   ├── verify_extraction_integration.py # Live extraction verification
 │   │   ├── verify_chunking.py            # Policy chunking verification
-│   │   └── inspect_chunks.py             # Interactive chunk inspector CLI & JSON export
-│   ├── tests/                            # Automated test suite (119 tests, 100% pass)
+│   │   ├── inspect_chunks.py             # Interactive chunk inspector CLI & JSON export
+│   │   ├── verify_embeddings.py          # Live embedding verification
+│   │   └── verify_live_persistence.py    # Live pgvector persistence verification
+│   ├── tests/                            # Automated test suite (175 tests passing, 100% pass)
 │   │   ├── test_config.py
 │   │   ├── test_health.py
 │   │   ├── test_document_upload.py
 │   │   ├── test_storage_service.py
 │   │   ├── test_document_extractor.py
-│   │   └── test_document_chunker.py
+│   │   ├── test_document_chunker.py
+│   │   ├── test_embedding_service.py
+│   │   ├── test_chunk_persistence.py
+│   │   └── test_ingestion_orchestration.py
 │   ├── requirements.txt                  # Python dependencies
 │   ├── .env.example                      # Configuration template
 │   └── .gitignore
@@ -261,4 +286,4 @@ KnowBridge-AI/
 - [x] **Task 003D:** Intelligent Document Chunking Service (Structure-Aware, Heading Hierarchy, Table Splitting, 117 Tests)
 - [x] **Task 003E:** Embeddings Generation Engine (all-MiniLM-L6-v2, 384d Normalized Vectors, 137 Tests)
 - [x] **Task 003F:** PostgreSQL pgvector Chunk Persistence (pgvector, Document Versions, Single-Transaction Idempotency, 159 Tests)
-- [ ] **Task 003G:** End-to-End Ingestion Pipeline Orchestration *(Ready)*
+- [x] **Task 003G:** End-to-End Ingestion Pipeline Orchestration (Asynchronous Background Coordinator, REST Polling & Trigger Endpoints, Concurrency Guards, 175 Tests)

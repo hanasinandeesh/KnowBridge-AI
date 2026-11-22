@@ -4,6 +4,7 @@ from app.schemas.document import DocumentUploadResponse
 from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult
 from app.schemas.extraction import ContentUnit, DocumentExtractionResult
 from app.schemas.persistence import DocumentPersistenceRequest, DocumentPersistenceResponse
+from app.schemas.ingestion import IngestionJobResponse
 
 __all__ = [
     "DocumentUploadResponse",
@@ -15,4 +16,5 @@ __all__ = [
     "DocumentEmbeddingResult",
     "DocumentPersistenceRequest",
     "DocumentPersistenceResponse",
+    "IngestionJobResponse",
 ]

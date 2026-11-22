@@ -46,6 +46,11 @@ from app.services.chunk_persistence import (
     PersistenceError,
     get_chunk_persistence_service,
 )
+from app.services.ingestion_service import (
+    IngestionService,
+    get_ingestion_service,
+    run_background_ingestion,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -83,4 +88,7 @@ __all__ = [
     "DocumentVersionResolutionError",
     "EmbeddingValidationError",
     "AlignmentError",
+    "IngestionService",
+    "get_ingestion_service",
+    "run_background_ingestion",
 ]

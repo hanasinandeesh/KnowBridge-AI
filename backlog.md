@@ -74,12 +74,15 @@
     - 22 automated tests passing with 100% pass rate.
   - **Estimated Effort:** Completed
 
-- [ ] **STORY-406: Asynchronous Ingestion Job Coordinator [Task 003G Ready]**
-  - **Description:** Implement background worker and orchestrator automating the full upload -> extraction -> chunking -> embedding -> persistence pipeline with job status polling endpoint `GET /api/v1/ingestion/{job_id}`.
+- [x] **STORY-406: Asynchronous Ingestion Job Coordinator [Task 003G Completed]**
+  - **Description:** Implement background worker and orchestrator automating the full upload -> extraction -> chunking -> embedding -> persistence pipeline with job status polling endpoint `GET /api/v1/ingestion/{job_id}` and `GET /api/v1/ingestion/document/{document_id}`.
   - **Acceptance Criteria:**
-    - Tracks `processed_pages` against `total_pages`.
+    - Background task triggers full pipeline asynchronously via FastAPI `BackgroundTasks`.
+    - Concurrency guards prevent duplicate concurrent processing on the same document.
     - Captures detailed sanitized error messages upon ingestion failure.
-  - **Estimated Effort:** 45 mins
+    - Provides `GET /api/v1/ingestion/{job_id}` and `POST /api/v1/ingestion/{document_id}/process` (202 Accepted).
+    - 16 automated tests in `test_ingestion_orchestration.py` passing with 100% pass rate.
+  - **Estimated Effort:** Completed
 
 ---
 

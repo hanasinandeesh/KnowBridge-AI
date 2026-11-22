@@ -1,11 +1,12 @@
 import logging
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db, sanitize_error_message
 from app.models.document import Document
+from app.models.ingestion_job import IngestionJob
 from app.parsers.base import (
     CorruptedDocumentError,
     EncryptedDocumentError,
@@ -38,6 +39,7 @@ from app.services.chunk_persistence import (
     PersistenceError,
     get_chunk_persistence_service,
 )
+from app.services.ingestion_service import run_background_ingestion
 from app.services.document_service import (
     create_document_record,
     process_and_validate_upload,
@@ -69,9 +71,14 @@ router = APIRouter(tags=["documents"])
     ),
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(
         ...,
         description="The document file binary to upload (supported: PDF, DOCX, TXT).",
+    ),
+    auto_process: bool = Query(
+        False,
+        description="If True, automatically triggers the asynchronous ingestion pipeline in background.",
     ),
     db: Session = Depends(get_db),
     storage: StorageService = Depends(get_storage_service),
@@ -172,12 +179,38 @@ async def upload_document(
     # 6. Safely free temporary binary content bytes from memory
     del content_bytes
 
+    # 7. Optionally trigger automatic background ingestion if requested
+    ingestion_job_id: Optional[uuid.UUID] = None
+    if auto_process:
+        job = IngestionJob(
+            id=uuid.uuid4(),
+            document_id=document.id,
+            status="pending",
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        ingestion_job_id = job.id
+
+        if background_tasks is not None:
+            background_tasks.add_task(
+                run_background_ingestion,
+                document_id=document.id,
+                job_id=job.id,
+            )
+            logger.info(
+                "Triggered automatic background ingestion for uploaded document %s (job_id=%s)",
+                document.id,
+                job.id,
+            )
+
     return DocumentUploadResponse(
         document_id=document.id,
         filename=document.original_filename,
         file_type=document.file_type,
         status=document.status,
         storage_path=document.storage_path,
+        ingestion_job_id=ingestion_job_id,
     )
 
 
