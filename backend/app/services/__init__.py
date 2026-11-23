@@ -34,6 +34,7 @@ from app.services.embedding_service import (
     EmbeddingGenerationError,
     EmbeddingService,
     InvalidChunkError,
+    InvalidQueryError,
     ModelInitializationError,
     NonFiniteVectorError,
     get_embedding_service,
@@ -50,6 +51,15 @@ from app.services.ingestion_service import (
     IngestionService,
     get_ingestion_service,
     run_background_ingestion,
+)
+from app.services.retrieval_service import (
+    EvidenceItem,
+    EvidencePackage,
+    InvalidRetrievalParameterError,
+    RetrievalDatabaseError,
+    RetrievalError,
+    RetrievalService,
+    get_retrieval_service,
 )
 
 __all__ = [
@@ -79,6 +89,7 @@ __all__ = [
     "EmbeddingError",
     "ModelInitializationError",
     "InvalidChunkError",
+    "InvalidQueryError",
     "EmbeddingDimensionMismatchError",
     "NonFiniteVectorError",
     "EmbeddingGenerationError",
@@ -91,4 +102,11 @@ __all__ = [
     "IngestionService",
     "get_ingestion_service",
     "run_background_ingestion",
+    "RetrievalService",
+    "get_retrieval_service",
+    "RetrievalError",
+    "InvalidRetrievalParameterError",
+    "RetrievalDatabaseError",
+    "EvidenceItem",
+    "EvidencePackage",
 ]

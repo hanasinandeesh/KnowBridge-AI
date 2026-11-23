@@ -110,3 +110,38 @@ class DocumentEmbeddingResult(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class QueryEmbedding(BaseModel):
+    """
+    Structured representation of a natural-language query embedding.
+    Ensures mathematical and dimensional alignment with stored document chunks.
+    """
+
+    query: str = Field(
+        ...,
+        description="Original natural-language search query or question",
+        examples=["What is the maximum domestic per diem allowance?"],
+    )
+    embedding: list[float] = Field(
+        ...,
+        description="384-dimensional dense numerical vector representation",
+    )
+    embedding_model: str = Field(
+        ...,
+        description="Sentence Transformers model identifier used for generation",
+        examples=["sentence-transformers/all-MiniLM-L6-v2"],
+    )
+    dimension: int = Field(
+        default=384,
+        description="Dimension count of the embedding vector (strictly 384)",
+        examples=[384],
+    )
+    is_normalized: bool = Field(
+        default=True,
+        description="Whether the embedding is unit L2 normalized",
+        examples=[True],
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
