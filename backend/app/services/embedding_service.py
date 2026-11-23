@@ -6,8 +6,9 @@ from typing import Any, Optional, Union
 import numpy as np
 
 from app.core.config import settings
+from app.core.database import sanitize_error_message
 from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
-from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult
+from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult, QueryEmbedding
 
 logger = logging.getLogger("app.services.embedding")
 
@@ -28,6 +29,11 @@ class ModelInitializationError(EmbeddingError):
 
 class InvalidChunkError(EmbeddingError):
     """Raised when an input chunk has invalid structure, empty text, or whitespace-only content."""
+    pass
+
+
+class InvalidQueryError(InvalidChunkError):
+    """Raised when an input query or question is invalid, non-string, empty, or whitespace-only."""
     pass
 
 
@@ -261,8 +267,9 @@ class EmbeddingService:
         except Exception as exc:
             if isinstance(exc, EmbeddingError):
                 raise
-            logger.error("Error during embedding generation: %s", exc)
-            raise EmbeddingGenerationError(f"Embedding generation failed: {exc}") from exc
+            sanitized = sanitize_error_message(str(exc))
+            logger.error("Error during embedding generation: %s", sanitized)
+            raise EmbeddingGenerationError(f"Embedding generation failed: {sanitized}") from exc
 
         # Convert to numpy array if not already
         if not isinstance(raw_embeddings, np.ndarray):
@@ -427,23 +434,59 @@ class EmbeddingService:
 
     def embed_query(self, query: str) -> list[float]:
         """
-        Embeds a single search query string into a 384-dimensional normalized vector.
+        Embeds a single search query or question into a 384-dimensional normalized vector.
         Ensures queries and document chunks use the identical model and normalization strategy.
-        
+        Compatible with pgvector VECTOR(384).
+
         Args:
-            query: User search query string.
+            query: User natural-language search query or question string.
 
         Returns:
             384-dimensional normalized float vector.
 
         Raises:
-            InvalidChunkError: If query is empty or whitespace-only.
+            InvalidQueryError: If query is empty, whitespace-only, or not a string.
+            EmbeddingGenerationError: If encoding fails.
+            EmbeddingDimensionMismatchError: If output dimension != 384.
+            NonFiniteVectorError: If vector contains NaN or Inf.
         """
         if not isinstance(query, str) or not query.strip():
-            raise InvalidChunkError("Query cannot be empty or whitespace-only.")
+            raise InvalidQueryError("Query cannot be empty or whitespace-only.")
 
-        vectors = self.embed_texts([query], batch_size=1)
-        return vectors[0]
+        cleaned_query = query.strip()
+        try:
+            vectors = self.embed_texts([cleaned_query], batch_size=1)
+            if not vectors:
+                raise EmbeddingGenerationError("Model returned empty vector list for query.")
+            vector = vectors[0]
+            self.validate_vector(vector)
+            return vector
+        except EmbeddingError:
+            raise
+        except Exception as exc:
+            sanitized = sanitize_error_message(str(exc))
+            logger.error("Failed to generate query embedding: %s", sanitized)
+            raise EmbeddingGenerationError(f"Query embedding generation failed: {sanitized}") from exc
+
+    def embed_query_structured(self, query: str) -> QueryEmbedding:
+        """
+        Embeds a natural-language search query into a structured QueryEmbedding Pydantic object.
+        Preserves original query string, vector, model name, dimension, and normalization status.
+
+        Args:
+            query: User search query or question string.
+
+        Returns:
+            QueryEmbedding object containing vector and audit metadata.
+        """
+        vector = self.embed_query(query)
+        return QueryEmbedding(
+            query=query.strip(),
+            embedding=vector,
+            embedding_model=self.model_name,
+            dimension=self.dimension,
+            is_normalized=self.normalize_embeddings,
+        )
 
 
 # ---------------------------------------------------------------------------
