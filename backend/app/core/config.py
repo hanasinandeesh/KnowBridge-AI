@@ -148,6 +148,63 @@ class Settings(BaseSettings):
         description="Default document chunk overlap in characters",
     )
 
+    # Groq LLM Settings (Task 05A)
+    GROQ_API_KEY: str = Field(
+        default="",
+        description="Groq Cloud API key (server-side only, never exposed or hardcoded)",
+    )
+    GROQ_BASE_URL: str = Field(
+        default="https://api.groq.com/openai/v1",
+        description="Base URL for Groq OpenAI-compatible inference API",
+    )
+    GROQ_QUERY_MODEL: str = Field(
+        default="openai/gpt-oss-20b",
+        description="Fast free-tier Groq model for query understanding and rewriting",
+    )
+    GROQ_ASSESSMENT_MODEL: str = Field(
+        default="openai/gpt-oss-120b",
+        description="Groq reasoning model for evidence sufficiency and NLI conflict detection",
+    )
+    GROQ_GENERATION_MODEL: str = Field(
+        default="openai/gpt-oss-120b",
+        description="Groq model for grounded answer generation",
+    )
+    GENERATION_TEMPERATURE: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Sampling temperature for grounded answer generation",
+    )
+    GENERATION_MAX_TOKENS: int = Field(
+        default=2048,
+        ge=64,
+        le=8192,
+        description="Maximum completion tokens for grounded answer generation (includes reasoning headroom)",
+    )
+    EVIDENCE_MIN_SIMILARITY: float = Field(
+        default=0.65,
+        ge=0.0,
+        le=1.0,
+        description="Minimum cosine similarity threshold for evidence sufficiency assessment",
+    )
+    GROQ_TIMEOUT: float = Field(
+        default=15.0,
+        description="HTTP request timeout in seconds for Groq API calls",
+    )
+
+    @property
+    def is_llm_configured(self) -> bool:
+        """
+        Validates whether the Groq LLM API key and model are configured.
+        Returns False if missing or containing placeholder tokens.
+        """
+        if not self.GROQ_API_KEY or not self.GROQ_API_KEY.strip():
+            return False
+        placeholder_indicators = ("[YOUR-", "YOUR_ACTUAL_", "<your-")
+        if any(token in self.GROQ_API_KEY for token in placeholder_indicators):
+            return False
+        return bool(self.GROQ_QUERY_MODEL and self.GROQ_QUERY_MODEL.strip())
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE) if ENV_FILE.exists() else ".env",
         env_file_encoding="utf-8",

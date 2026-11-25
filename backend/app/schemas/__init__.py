@@ -1,13 +1,39 @@
 """API request and response schemas package."""
+from app.schemas.answer_generation import (
+    AnswerCitation,
+    AnswerGenerationRequest,
+    AnswerGenerationResult,
+    AnswerStatus,
+)
 from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
 from app.schemas.document import DocumentUploadResponse
 from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult, QueryEmbedding
 from app.schemas.extraction import ContentUnit, DocumentExtractionResult
 from app.schemas.persistence import DocumentPersistenceRequest, DocumentPersistenceResponse
+from app.schemas.evidence_assessment import (
+    EvidenceAssessmentRequest,
+    EvidenceAssessmentResult,
+    EvidenceDecision,
+    EvidenceReference,
+    PolicyConflictItem,
+    SupportLevel,
+)
 from app.schemas.ingestion import IngestionJobResponse
+from app.schemas.orchestration import RAGWorkflowRequest, RAGWorkflowResult
+from app.schemas.query_understanding import (
+    ConversationTurn,
+    QueryIntent,
+    QueryUnderstandingRequest,
+    QueryUnderstandingResult,
+    RetrievalHints,
+)
 from app.schemas.retrieval import EvidenceItem, EvidencePackage, RetrievalResult, RetrievedChunk
 
 __all__ = [
+    "AnswerCitation",
+    "AnswerGenerationRequest",
+    "AnswerGenerationResult",
+    "AnswerStatus",
     "DocumentUploadResponse",
     "ContentUnit",
     "DocumentExtractionResult",
@@ -19,6 +45,19 @@ __all__ = [
     "DocumentPersistenceRequest",
     "DocumentPersistenceResponse",
     "IngestionJobResponse",
+    "RAGWorkflowRequest",
+    "RAGWorkflowResult",
+    "EvidenceDecision",
+    "SupportLevel",
+    "EvidenceReference",
+    "PolicyConflictItem",
+    "EvidenceAssessmentRequest",
+    "EvidenceAssessmentResult",
+    "ConversationTurn",
+    "QueryIntent",
+    "QueryUnderstandingRequest",
+    "QueryUnderstandingResult",
+    "RetrievalHints",
     "RetrievedChunk",
     "RetrievalResult",
     "EvidenceItem",

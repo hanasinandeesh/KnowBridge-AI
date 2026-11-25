@@ -61,6 +61,36 @@ from app.services.retrieval_service import (
     RetrievalService,
     get_retrieval_service,
 )
+from app.services.llm_client import (
+    GroqLLMClient,
+    LLMClient,
+    LLMConfigurationError,
+    LLMError,
+    LLMProviderError,
+    get_llm_client,
+)
+from app.services.query_understanding_service import (
+    InvalidQueryInputError,
+    LLMOutputValidationError,
+    QueryUnderstandingError,
+    QueryUnderstandingService,
+    get_query_understanding_service,
+)
+from app.services.evidence_assessment_service import (
+    AssessmentOutputValidationError,
+    EvidenceAssessmentError,
+    EvidenceAssessmentService,
+    InvalidAssessmentInputError,
+    get_evidence_assessment_service,
+)
+from app.services.answer_generation_service import (
+    AnswerGenerationError,
+    AnswerGenerationService,
+    CitationValidationError,
+    GenerationOutputValidationError,
+    InvalidGenerationInputError,
+    get_answer_generation_service,
+)
 
 __all__ = [
     "sanitize_filename",
@@ -109,4 +139,26 @@ __all__ = [
     "RetrievalDatabaseError",
     "EvidenceItem",
     "EvidencePackage",
+    "LLMClient",
+    "GroqLLMClient",
+    "get_llm_client",
+    "LLMError",
+    "LLMConfigurationError",
+    "LLMProviderError",
+    "QueryUnderstandingService",
+    "get_query_understanding_service",
+    "QueryUnderstandingError",
+    "InvalidQueryInputError",
+    "LLMOutputValidationError",
+    "EvidenceAssessmentService",
+    "get_evidence_assessment_service",
+    "EvidenceAssessmentError",
+    "InvalidAssessmentInputError",
+    "AssessmentOutputValidationError",
+    "AnswerGenerationService",
+    "get_answer_generation_service",
+    "AnswerGenerationError",
+    "InvalidGenerationInputError",
+    "GenerationOutputValidationError",
+    "CitationValidationError",
 ]
