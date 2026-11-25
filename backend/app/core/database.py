@@ -55,6 +55,12 @@ def sanitize_error_message(message: str) -> str:
         "eyJ*****",
         sanitized,
     )
+    # Redact Groq API keys
+    sanitized = re.sub(
+        r"gsk_[A-Za-z0-9\-_]+",
+        "gsk_*****",
+        sanitized,
+    )
     return sanitized
 
 

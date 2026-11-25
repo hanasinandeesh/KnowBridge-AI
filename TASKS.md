@@ -2,7 +2,7 @@
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Architecture Lead:** Senior Software Architect & AI Engineer  
-**Status:** Task 003F Completed — Ready for Task 003G (Ingestion Orchestration / Task 04)  
+**Status:** Task 05 Completed — Ready for Task 06 (FastAPI Chat & Feedback API Endpoints)  
 
 ---
 
@@ -142,16 +142,33 @@
   - [x] Author 16 comprehensive automated tests in `backend/tests/test_ingestion_orchestration.py` (175 passing backend tests total, 100% pass)
   - [x] Full regression test run: 175 passed, 0 failed, 2 skipped
 
-- [ ] **TASK 05 — LangGraph RAG Orchestrator & State Graph**
-  - [ ] Define `AgentState` TypedDict schema
-  - [ ] Implement `node_query_understanding` (query re-writing with conversational history)
-  - [ ] Implement `node_retrieve` (pgvector cosine similarity + temporal filtering)
-  - [ ] Implement `node_assess_evidence` (Groq NLI sufficiency & conflict detection)
-  - [ ] Implement `node_generate_answer` (Groq Llama 3.3 70B strict grounded prompt)
-  - [ ] Implement `node_abstain` (safe refusal templates on insufficient evidence)
-  - [ ] Implement `node_resolve_conflict` (discrepancy formatting banner)
-  - [ ] Implement `node_validate_citations` (deterministic page-number verification)
-  - [ ] Configure LangGraph Postgres checkpointer for conversation memory
+- [x] **TASK 04 — Policy-Aware RAG Retrieval Engine (Completed)**
+  - [x] Integrate `sentence-transformers/all-MiniLM-L6-v2` dense query embedding
+  - [x] Implement policy version filtering (`is_current=True`, temporal validity date ranges)
+  - [x] Multi-format provenance tracking (PDF 1-based page numbers, DOCX/TXT headings)
+  - [x] Structured evidence package assembly (`EvidencePackage`, `RetrievedChunk`)
+  - [x] Implement deterministic fallback caching for sentence transformer models
+  - [x] Author 28 comprehensive automated tests in `backend/tests/test_retrieval_service.py` (100% pass)
+
+- [x] **TASK 05 — LangGraph RAG Orchestrator & State Graph (Completed)**
+  - [x] **Task 05A: Query Understanding**
+    - [x] Define `QueryUnderstandingRequest`, `QueryUnderstandingResult`, `QueryIntent`, `RetrievalHints`
+    - [x] Implement `QueryUnderstandingService` and `GroqLLMClient` with conversational history re-writing
+    - [x] Author 23 automated tests in `backend/tests/test_query_understanding.py` (100% pass)
+  - [x] **Task 05B: Evidence Assessment & Conflict Detection**
+    - [x] Define `EvidenceAssessmentRequest`, `EvidenceAssessmentResult`, `EvidenceDecision`, `SupportLevel`, `PolicyConflictItem`
+    - [x] Implement `EvidenceAssessmentService` with deterministic sufficiency heuristics and Groq NLI conflict detection
+    - [x] Author 14 unit tests in `backend/tests/test_evidence_assessment.py` (100% pass)
+  - [x] **Task 05C: Grounded LLM Answer Generation**
+    - [x] Define `AnswerGenerationRequest`, `AnswerGenerationResult`, `AnswerStatus`, `AnswerCitation`
+    - [x] Implement `AnswerGenerationService` with grounded synthesis, provenance citations, safe abstention formatting, and citation verification
+    - [x] Author 11 unit tests in `backend/tests/test_answer_generation.py` (100% pass)
+  - [x] **Task 05D: LangGraph Workflow & State Graph**
+    - [x] Define typed `AgentState` schema in `backend/app/graph/state.py`
+    - [x] Implement modular nodes (`node_query_understanding`, `node_retrieve`, `node_assess_evidence`, `node_generate_answer`, `node_abstain`, `node_handle_conflict`, `node_handle_clarification`, `node_handle_error`)
+    - [x] Implement explicit conditional routing in `backend/app/graph/routing.py`
+    - [x] Implement compiled workflow in `backend/app/graph/workflow.py` with `MemorySaver` checkpointer and `ALLOWED_CHECKPOINT_TYPES` serialization
+    - [x] Author 11 unit & routing tests in `backend/tests/test_rag_graph.py` (100% pass)
 
 - [ ] **TASK 06 — FastAPI Application & API Endpoints**
   - [x] Implement `/api/v1/documents/upload` endpoint (multipart PDF, DOCX, TXT upload - Completed in Task 003A)

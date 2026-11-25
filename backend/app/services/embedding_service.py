@@ -114,10 +114,18 @@ class EmbeddingService:
                     try:
                         from sentence_transformers import SentenceTransformer
 
-                        loaded_model = SentenceTransformer(
-                            self.model_name,
-                            device=self.device,
-                        )
+                        # Attempt to load from local cache first to avoid network latency/timeout
+                        try:
+                            loaded_model = SentenceTransformer(
+                                self.model_name,
+                                device=self.device,
+                                local_files_only=True,
+                            )
+                        except Exception:
+                            loaded_model = SentenceTransformer(
+                                self.model_name,
+                                device=self.device,
+                            )
                         # Verify that model output dimension matches configured dimension
                         if hasattr(loaded_model, "get_embedding_dimension"):
                             model_dim = loaded_model.get_embedding_dimension()
