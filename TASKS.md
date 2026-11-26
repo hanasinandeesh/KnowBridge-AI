@@ -191,6 +191,12 @@
     - [x] Define `ContextBuilderRequest` and `ContextBuilderResult` with Task 05A `QueryUnderstandingRequest` adapter in `backend/app/schemas/context_builder.py`
     - [x] Implement `ContextBuilderService` in `backend/app/services/context_builder_service.py` with efficient tail query, chronological window bounding, deterministic 0-turn bypass, and Groq LLM resolution
     - [x] Author 15 comprehensive unit, pronoun, ambiguity, boundary, and fallback tests in `backend/tests/test_context_builder.py` (100% pass)
+  - [x] **Task 06E: Persistent Memory System**
+    - [x] Model `UserMemory` in `backend/app/models/user_memory.py` harmonized with Supabase `user_memories` table
+    - [x] Pydantic v2 schemas (`MemoryType`, `ExtractedMemoryItem`, `MemoryCreate`, `MemoryResponse`, `MemoryListResponse`, `ActiveMemoryContext`) in `backend/app/schemas/memory.py`
+    - [x] Implement `MemoryService` in `backend/app/services/memory_service.py` with Groq LLM extraction, PII filtering regex, durability checking, confidence thresholding (>= 0.75), exact fact deduplication, and superseding update with audit history
+    - [x] Implement REST API routes in `backend/app/api/routes/memories.py` mounted at `/api/v1/memories` (`GET /`, `GET /context`, `POST /`, `DELETE /{id}`, `DELETE /session/{session_key}`)
+    - [x] Author 16 automated tests in `backend/tests/test_memory.py` covering extraction, PII, durability, superseding audit, expiration, rollback, and REST endpoints (100% pass)
   - [ ] Implement `/api/v1/documents` listing endpoint
   - [ ] Implement `/api/v1/chat` conversational query endpoint
   - [ ] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down)

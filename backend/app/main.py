@@ -9,6 +9,7 @@ from app.api.routes.conversations import router as conversations_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.health import router as health_router
 from app.api.routes.ingestion import router as ingestion_router
+from app.api.routes.memories import router as memories_router
 from app.core.config import settings
 from app.core.database import check_db_connected, close_db_connection
 
@@ -76,6 +77,7 @@ app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(documents_router, prefix=f"{settings.API_V1_STR}/documents")
 app.include_router(ingestion_router, prefix=f"{settings.API_V1_STR}/ingestion")
 app.include_router(conversations_router, prefix=f"{settings.API_V1_STR}/conversations")
+app.include_router(memories_router, prefix=f"{settings.API_V1_STR}/memories")
 
 
 @app.get("/", tags=["root"])

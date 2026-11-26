@@ -54,5 +54,12 @@ class Conversation(Base):
         order_by="Message.created_at",
     )
 
+    # Relationship to user memories with SET NULL on conversation deletion
+    user_memories = relationship(
+        "UserMemory",
+        back_populates="conversation",
+        passive_deletes=True,
+    )
+
     def __repr__(self) -> str:
         return f"<Conversation id={self.id} title='{self.title}'>"

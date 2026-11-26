@@ -16,6 +16,14 @@ from app.schemas.conversation import (
     ConversationResponse,
     ConversationUpdate,
 )
+from app.schemas.memory import (
+    ActiveMemoryContext,
+    ExtractedMemoryItem,
+    MemoryCreate,
+    MemoryListResponse,
+    MemoryResponse,
+    MemoryType,
+)
 from app.schemas.message import (
     CitationItem,
     EvidenceStatusEnum,
@@ -83,6 +91,12 @@ __all__ = [
     "PolicyConflictItem",
     "EvidenceAssessmentRequest",
     "EvidenceAssessmentResult",
+    "ActiveMemoryContext",
+    "ExtractedMemoryItem",
+    "MemoryCreate",
+    "MemoryListResponse",
+    "MemoryResponse",
+    "MemoryType",
     "ConversationTurn",
     "QueryIntent",
     "QueryUnderstandingRequest",

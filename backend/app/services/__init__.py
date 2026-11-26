@@ -5,6 +5,13 @@ from app.services.context_builder_service import (
     InvalidContextBuilderInputError,
     get_context_builder_service,
 )
+from app.services.memory_service import (
+    MemoryDatabaseError,
+    MemoryService,
+    MemoryServiceError,
+    MemoryValidationError,
+    get_memory_service,
+)
 from app.services.conversation_service import (
     ConversationService,
     ConversationServiceError,
@@ -185,4 +192,9 @@ __all__ = [
     "ContextBuilderError",
     "InvalidContextBuilderInputError",
     "get_context_builder_service",
+    "MemoryService",
+    "MemoryServiceError",
+    "MemoryDatabaseError",
+    "MemoryValidationError",
+    "get_memory_service",
 ]
