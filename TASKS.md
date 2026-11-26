@@ -173,6 +173,20 @@
 - [ ] **TASK 06 — FastAPI Application & API Endpoints**
   - [x] Implement `/api/v1/documents/upload` endpoint (multipart PDF, DOCX, TXT upload - Completed in Task 003A)
   - [x] Implement `/api/v1/ingestion/{job_id}` status polling endpoint (Completed in Task 003G)
+  - [x] **Task 06B: Conversation Management APIs**
+    - [x] Define SQLAlchemy `Conversation` and `Message` models matching Supabase schema
+    - [x] Implement `POST /api/v1/conversations` (create thread, default/custom title, UUID v4)
+    - [x] Implement `GET /api/v1/conversations` (paginated listing, deterministic ordering, message count aggregation)
+    - [x] Implement `GET /api/v1/conversations/{conversation_id}` (detail retrieval, 404 on missing, message count)
+    - [x] Implement `PATCH /api/v1/conversations/{conversation_id}` (update title, whitespace validation, timestamp refresh)
+    - [x] Implement `DELETE /api/v1/conversations/{conversation_id}` (cascade deletion, foreign key safety, HTTP 204)
+    - [x] Author 26 unit, API, pagination, and rollback tests in `backend/tests/test_conversations.py` (100% pass)
+  - [x] **Task 06C: Message Persistence**
+    - [x] Define Pydantic v2 schemas (`MessageRole`, `EvidenceStatusEnum`, `CitationItem`, `MessageCreate`, `MessageResponse`, `MessageListResponse`) in `backend/app/schemas/message.py`
+    - [x] Implement `MessageService` in `backend/app/services/message_service.py` with citation persistence, transactional rollback, and parent timestamp synchronization
+    - [x] Implement `POST /api/v1/conversations/{conversation_id}/messages` (persist user or assistant message with structured citations & evidence status)
+    - [x] Implement `GET /api/v1/conversations/{conversation_id}/messages` (deterministic chronological ordering `created_at ASC, id ASC`, pagination, 404 on nonexistent)
+    - [x] Author 19 unit, validation, pagination, and rollback tests in `backend/tests/test_messages.py` (100% pass)
   - [ ] Implement `/api/v1/documents` listing endpoint
   - [ ] Implement `/api/v1/chat` conversational query endpoint
   - [ ] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down)

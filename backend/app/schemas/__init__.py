@@ -6,6 +6,20 @@ from app.schemas.answer_generation import (
     AnswerStatus,
 )
 from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
+from app.schemas.conversation import (
+    ConversationCreate,
+    ConversationListResponse,
+    ConversationResponse,
+    ConversationUpdate,
+)
+from app.schemas.message import (
+    CitationItem,
+    EvidenceStatusEnum,
+    MessageCreate,
+    MessageListResponse,
+    MessageResponse,
+    MessageRole,
+)
 from app.schemas.document import DocumentUploadResponse
 from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult, QueryEmbedding
 from app.schemas.extraction import ContentUnit, DocumentExtractionResult
@@ -34,6 +48,16 @@ __all__ = [
     "AnswerGenerationRequest",
     "AnswerGenerationResult",
     "AnswerStatus",
+    "ConversationCreate",
+    "ConversationListResponse",
+    "ConversationResponse",
+    "ConversationUpdate",
+    "CitationItem",
+    "EvidenceStatusEnum",
+    "MessageCreate",
+    "MessageListResponse",
+    "MessageResponse",
+    "MessageRole",
     "DocumentUploadResponse",
     "ContentUnit",
     "DocumentExtractionResult",
