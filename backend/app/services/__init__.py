@@ -1,4 +1,13 @@
 """Services package."""
+from app.services.conversation_service import (
+    ConversationService,
+    ConversationServiceError,
+)
+from app.services.message_service import (
+    ConversationNotFoundError,
+    MessageService,
+    MessageServiceError,
+)
 from app.services.document_service import (
     create_document_record,
     process_and_validate_upload,
@@ -161,4 +170,9 @@ __all__ = [
     "InvalidGenerationInputError",
     "GenerationOutputValidationError",
     "CitationValidationError",
+    "ConversationService",
+    "ConversationServiceError",
+    "MessageService",
+    "MessageServiceError",
+    "ConversationNotFoundError",
 ]
