@@ -187,6 +187,10 @@
     - [x] Implement `POST /api/v1/conversations/{conversation_id}/messages` (persist user or assistant message with structured citations & evidence status)
     - [x] Implement `GET /api/v1/conversations/{conversation_id}/messages` (deterministic chronological ordering `created_at ASC, id ASC`, pagination, 404 on nonexistent)
     - [x] Author 19 unit, validation, pagination, and rollback tests in `backend/tests/test_messages.py` (100% pass)
+  - [x] **Task 06D: Conversation History & Context Builder**
+    - [x] Define `ContextBuilderRequest` and `ContextBuilderResult` with Task 05A `QueryUnderstandingRequest` adapter in `backend/app/schemas/context_builder.py`
+    - [x] Implement `ContextBuilderService` in `backend/app/services/context_builder_service.py` with efficient tail query, chronological window bounding, deterministic 0-turn bypass, and Groq LLM resolution
+    - [x] Author 15 comprehensive unit, pronoun, ambiguity, boundary, and fallback tests in `backend/tests/test_context_builder.py` (100% pass)
   - [ ] Implement `/api/v1/documents` listing endpoint
   - [ ] Implement `/api/v1/chat` conversational query endpoint
   - [ ] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down)

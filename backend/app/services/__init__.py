@@ -1,4 +1,10 @@
 """Services package."""
+from app.services.context_builder_service import (
+    ContextBuilderError,
+    ContextBuilderService,
+    InvalidContextBuilderInputError,
+    get_context_builder_service,
+)
 from app.services.conversation_service import (
     ConversationService,
     ConversationServiceError,
@@ -175,4 +181,8 @@ __all__ = [
     "MessageService",
     "MessageServiceError",
     "ConversationNotFoundError",
+    "ContextBuilderService",
+    "ContextBuilderError",
+    "InvalidContextBuilderInputError",
+    "get_context_builder_service",
 ]

@@ -6,6 +6,10 @@ from app.schemas.answer_generation import (
     AnswerStatus,
 )
 from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
+from app.schemas.context_builder import (
+    ContextBuilderRequest,
+    ContextBuilderResult,
+)
 from app.schemas.conversation import (
     ConversationCreate,
     ConversationListResponse,
@@ -48,6 +52,8 @@ __all__ = [
     "AnswerGenerationRequest",
     "AnswerGenerationResult",
     "AnswerStatus",
+    "ContextBuilderRequest",
+    "ContextBuilderResult",
     "ConversationCreate",
     "ConversationListResponse",
     "ConversationResponse",
