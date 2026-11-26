@@ -146,7 +146,10 @@ class MemoryService:
         formatted_dialogue = "\n".join(
             f"[{t.role.upper()}]: {t.content}" for t in turns[-6:]
         )
-        user_content = f"Analyze the following conversation and extract durable user facts:\n\n{formatted_dialogue}"
+        user_content = (
+            "Analyze the following conversation dialogue and extract durable user facts into a valid JSON object:\n\n"
+            f"{formatted_dialogue}"
+        )
 
         messages = [
             {"role": "system", "content": _MEMORY_EXTRACTOR_SYSTEM_PROMPT},
@@ -157,7 +160,7 @@ class MemoryService:
             raw_content, model_used = self._llm_client.complete_json(
                 messages=messages,
                 temperature=0.0,
-                max_tokens=768,
+                max_tokens=1536,
             )
             cleaned = _strip_markdown_fences(raw_content)
             data = json.loads(cleaned)
