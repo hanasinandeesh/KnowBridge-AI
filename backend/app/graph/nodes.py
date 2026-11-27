@@ -80,6 +80,8 @@ def make_load_context_and_memory_node(
 
             # 1. Resolve conversation history & follow-up references
             if context_builder_service is not None:
+                if db is not None:
+                    context_builder_service.db = db
                 if conv_id is not None and db is not None:
                     cb_req = ContextBuilderRequest(
                         query=original_query,
@@ -108,6 +110,7 @@ def make_load_context_and_memory_node(
             # 2. Retrieve persistent user memory context
             active_memory_ctx: Optional[ActiveMemoryContext] = None
             if memory_service is not None and db is not None:
+                memory_service.db = db
                 try:
                     active_memory_ctx = memory_service.get_active_memory_context(session_key=session_key)
                 except Exception as mem_err:
@@ -389,6 +392,9 @@ def make_persist_interaction_node(
         extracted_memories: list[ExtractedMemoryItem] = []
 
         if db is not None and conv_id is not None and message_service is not None:
+            message_service.db = db
+            if memory_service is not None:
+                memory_service.db = db
             try:
                 # 1. Persist user prompt
                 user_msg = message_service.create_message(

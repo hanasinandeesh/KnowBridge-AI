@@ -152,7 +152,7 @@ class ContextBuilderService:
 
         # 1. Obtain conversation history
         history: list[ConversationTurn] = []
-        if in_memory_history is not None:
+        if in_memory_history:
             # Use bounded slice of provided in-memory history
             history = in_memory_history[-validated_req.max_history_turns:]
         elif validated_req.conversation_id is not None:

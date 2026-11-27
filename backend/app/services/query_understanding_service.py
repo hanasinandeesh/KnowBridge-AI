@@ -203,6 +203,14 @@ class QueryUnderstandingService:
         payload["original_query"] = original_query
         payload["model_used"] = model_used
 
+        # Fallback to original_query if rewritten_query is empty or whitespace
+        if not payload.get("rewritten_query") or not str(payload.get("rewritten_query")).strip():
+            payload["rewritten_query"] = original_query
+
+        # Fallback to sensible primary_topic if empty or whitespace
+        if not payload.get("primary_topic") or not str(payload.get("primary_topic")).strip():
+            payload["primary_topic"] = "general_policy"
+
         # Ensure clarification consistency if intent is CLARIFICATION
         if payload.get("intent") == QueryIntent.CLARIFICATION.value:
             payload.setdefault("needs_clarification", True)
