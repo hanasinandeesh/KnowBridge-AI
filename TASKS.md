@@ -2,7 +2,7 @@
 
 **Project:** KnowBridge AI — Policy-Aware Enterprise Knowledge Intelligence Platform  
 **Architecture Lead:** Senior Software Architect & AI Engineer  
-**Status:** Task 05 Completed — Ready for Task 06 (FastAPI Chat & Feedback API Endpoints)  
+**Status:** Task 06 Completed — Ready for Task 07 (Frontend SPA Implementation)  
 
 ---
 
@@ -197,10 +197,16 @@
     - [x] Implement `MemoryService` in `backend/app/services/memory_service.py` with Groq LLM extraction, PII filtering regex, durability checking, confidence thresholding (>= 0.75), exact fact deduplication, and superseding update with audit history
     - [x] Implement REST API routes in `backend/app/api/routes/memories.py` mounted at `/api/v1/memories` (`GET /`, `GET /context`, `POST /`, `DELETE /{id}`, `DELETE /session/{session_key}`)
     - [x] Author 16 automated tests in `backend/tests/test_memory.py` covering extraction, PII, durability, superseding audit, expiration, rollback, and REST endpoints (100% pass)
-  - [ ] Implement `/api/v1/documents` listing endpoint
-  - [ ] Implement `/api/v1/chat` conversational query endpoint
-  - [ ] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down)
-  - [ ] Configure global exception handlers and response middleware
+  - [x] **Task 06F: LangGraph Integration & End-to-End Chat Endpoints**
+    - [x] Define typed `AgentState` extensions, `ChatRequest`, `ChatResponse`, `FeedbackRequest`, `FeedbackResponse`
+    - [x] Implement `load_context_and_memory` node and `persist_interaction` node in `backend/app/graph/nodes.py`
+    - [x] Implement `build_chat_graph` and `RAGOrchestrator.chat()` with auto thread creation, follow-up resolution, and memory injection
+    - [x] Implement `/api/v1/documents` listing endpoint in `backend/app/api/routes/documents.py`
+    - [x] Implement `/api/v1/chat` conversational query endpoint in `backend/app/api/routes/chat.py`
+    - [x] Implement `/api/v1/feedback` user feedback endpoint (thumbs up/down) in `backend/app/api/routes/chat.py`
+    - [x] Author 9 unit, multi-turn, memory, abstention, conflict, feedback, and document tests in `backend/tests/test_chat.py` (100% pass)
+    - [x] Verified full regression suite across Task 04–06 (96 passed, 1 skipped)
+  - [x] Configure global exception handlers and response middleware
 
 - [ ] **TASK 07 — Frontend SPA Implementation (React + Vite + Tailwind)**
   - [ ] Initialize React + TypeScript + Vite project

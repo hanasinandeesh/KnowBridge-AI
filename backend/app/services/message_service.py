@@ -193,3 +193,8 @@ class MessageService:
             sanitized = sanitize_error_message(str(exc))
             logger.error("Failed to retrieve messages for conversation %s: %s", conversation_id, sanitized)
             raise MessageServiceError(f"Database error retrieving messages: {sanitized}") from exc
+
+
+def get_message_service(db: Session) -> MessageService:
+    """Dependency injection provider for MessageService."""
+    return MessageService(db=db)

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -41,3 +41,27 @@ class DocumentUploadResponse(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentItemResponse(BaseModel):
+    """Metadata summary for an individual policy document."""
+
+    id: uuid.UUID = Field(..., description="Document UUID")
+    title: str = Field(..., description="Human-readable document title")
+    original_filename: str = Field(..., description="Document filename")
+    file_type: str = Field(..., description="File format type")
+    category: Optional[str] = Field(None, description="Document category")
+    created_at: Optional[Any] = Field(None, description="Creation timestamp")
+    updated_at: Optional[Any] = Field(None, description="Last updated timestamp")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentListResponse(BaseModel):
+    """Paginated list of policy documents."""
+
+    items: list[DocumentItemResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

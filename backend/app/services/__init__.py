@@ -20,6 +20,7 @@ from app.services.message_service import (
     ConversationNotFoundError,
     MessageService,
     MessageServiceError,
+    get_message_service,
 )
 from app.services.document_service import (
     create_document_record,
@@ -187,6 +188,7 @@ __all__ = [
     "ConversationServiceError",
     "MessageService",
     "MessageServiceError",
+    "get_message_service",
     "ConversationNotFoundError",
     "ContextBuilderService",
     "ContextBuilderError",

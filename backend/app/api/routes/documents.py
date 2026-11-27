@@ -12,8 +12,13 @@ from app.parsers.base import (
     EncryptedDocumentError,
     UnsupportedDocumentError,
 )
+import math
 from app.schemas.chunking import DocumentChunkingResult
-from app.schemas.document import DocumentUploadResponse
+from app.schemas.document import (
+    DocumentItemResponse,
+    DocumentListResponse,
+    DocumentUploadResponse,
+)
 from app.schemas.embedding import DocumentEmbeddingResult
 from app.schemas.extraction import DocumentExtractionResult
 from app.schemas.persistence import DocumentPersistenceResponse
@@ -737,6 +742,57 @@ async def persist_document_chunks(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database persistence failed: {sanitized_err}",
         )
+
+
+@router.get(
+    "",
+    response_model=DocumentListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List Uploaded Documents",
+    description="Returns a paginated list of uploaded enterprise policy documents.",
+)
+def list_documents(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+) -> DocumentListResponse:
+    try:
+        offset = (page - 1) * page_size
+        total = db.query(Document).count()
+        docs = (
+            db.query(Document)
+            .order_by(Document.created_at.desc(), Document.id.desc())
+            .offset(offset)
+            .limit(page_size)
+            .all()
+        )
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
+        items = [
+            DocumentItemResponse(
+                id=doc.id,
+                title=doc.title,
+                original_filename=doc.original_filename,
+                file_type=doc.file_type,
+                category=doc.category,
+                created_at=doc.created_at,
+                updated_at=doc.updated_at,
+            )
+            for doc in docs
+        ]
+        return DocumentListResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+        )
+    except Exception as exc:
+        sanitized = sanitize_error_message(str(exc))
+        logger.error("Failed to list documents: %s", sanitized)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve document list from database.",
+        ) from exc
 
 
 

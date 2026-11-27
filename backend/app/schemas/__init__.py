@@ -5,6 +5,12 @@ from app.schemas.answer_generation import (
     AnswerGenerationResult,
     AnswerStatus,
 )
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+)
 from app.schemas.chunking import DocumentChunk, DocumentChunkingResult
 from app.schemas.context_builder import (
     ContextBuilderRequest,
@@ -32,7 +38,11 @@ from app.schemas.message import (
     MessageResponse,
     MessageRole,
 )
-from app.schemas.document import DocumentUploadResponse
+from app.schemas.document import (
+    DocumentItemResponse,
+    DocumentListResponse,
+    DocumentUploadResponse,
+)
 from app.schemas.embedding import ChunkEmbedding, DocumentEmbeddingResult, QueryEmbedding
 from app.schemas.extraction import ContentUnit, DocumentExtractionResult
 from app.schemas.persistence import DocumentPersistenceRequest, DocumentPersistenceResponse
@@ -60,6 +70,10 @@ __all__ = [
     "AnswerGenerationRequest",
     "AnswerGenerationResult",
     "AnswerStatus",
+    "ChatRequest",
+    "ChatResponse",
+    "FeedbackRequest",
+    "FeedbackResponse",
     "ContextBuilderRequest",
     "ContextBuilderResult",
     "ConversationCreate",
@@ -73,6 +87,8 @@ __all__ = [
     "MessageResponse",
     "MessageRole",
     "DocumentUploadResponse",
+    "DocumentItemResponse",
+    "DocumentListResponse",
     "ContentUnit",
     "DocumentExtractionResult",
     "DocumentChunk",

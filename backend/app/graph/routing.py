@@ -7,6 +7,22 @@ from app.schemas.evidence_assessment import EvidenceDecision
 from app.schemas.query_understanding import QueryIntent
 
 
+def route_after_context_and_memory(state: AgentState) -> str:
+    """
+    Routes after Task 06D / 06E context and memory loading:
+    - Failures -> 'handle_error'
+    - Ambiguity / clarification required from follow-up resolver -> 'handle_clarification'
+    - Normal flow -> 'query_understanding'
+    """
+    if state.get("workflow_status") == "failed":
+        return "handle_error"
+
+    if state.get("requires_clarification"):
+        return "handle_clarification"
+
+    return "query_understanding"
+
+
 def route_after_query_understanding(state: AgentState) -> str:
     """
     Routes after Task 05A:
