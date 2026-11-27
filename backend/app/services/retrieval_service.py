@@ -97,7 +97,7 @@ class RetrievalService:
         self,
         embedding_service: Optional[EmbeddingService] = None,
         default_top_k: int = 5,
-        default_threshold: float = 0.65,
+        default_threshold: float = 0.35,
     ) -> None:
         """
         Initializes the retrieval service.

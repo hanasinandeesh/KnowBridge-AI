@@ -182,7 +182,7 @@ class Settings(BaseSettings):
         description="Maximum completion tokens for grounded answer generation (includes reasoning headroom)",
     )
     EVIDENCE_MIN_SIMILARITY: float = Field(
-        default=0.65,
+        default=0.35,
         ge=0.0,
         le=1.0,
         description="Minimum cosine similarity threshold for evidence sufficiency assessment",

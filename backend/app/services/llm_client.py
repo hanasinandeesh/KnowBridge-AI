@@ -7,6 +7,7 @@ error sanitization. Designed to be shared across Task 05+ AI services.
 """
 
 import logging
+import time
 from functools import lru_cache
 from typing import Any, Optional, Protocol
 
@@ -129,36 +130,52 @@ class GroqLLMClient:
             "response_format": {"type": "json_object"},
         }
 
-        try:
-            if self._http_client is not None:
-                response = self._http_client.post(
-                    endpoint,
-                    headers=headers,
-                    json=payload,
-                    timeout=self._timeout,
-                )
-            else:
-                with httpx.Client(timeout=self._timeout) as client:
-                    response = client.post(endpoint, headers=headers, json=payload)
-        except httpx.TimeoutException as exc:
-            sanitized = sanitize_error_message(str(exc))
-            logger.warning("Groq API request timed out after %.1fs: %s", self._timeout, sanitized)
-            raise LLMProviderError(
-                f"LLM provider request timed out after {self._timeout}s."
-            ) from exc
-        except httpx.RequestError as exc:
-            sanitized = sanitize_error_message(str(exc))
-            logger.warning("Groq API network error: %s", sanitized)
-            raise LLMProviderError(f"LLM provider network error: {sanitized}") from exc
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if self._http_client is not None:
+                    response = self._http_client.post(
+                        endpoint,
+                        headers=headers,
+                        json=payload,
+                        timeout=self._timeout,
+                    )
+                else:
+                    with httpx.Client(timeout=self._timeout) as client:
+                        response = client.post(endpoint, headers=headers, json=payload)
+            except httpx.TimeoutException as exc:
+                sanitized = sanitize_error_message(str(exc))
+                logger.warning("Groq API request timed out after %.1fs: %s", self._timeout, sanitized)
+                raise LLMProviderError(
+                    f"LLM provider request timed out after {self._timeout}s."
+                ) from exc
+            except httpx.RequestError as exc:
+                sanitized = sanitize_error_message(str(exc))
+                logger.warning("Groq API network error: %s", sanitized)
+                raise LLMProviderError(f"LLM provider network error: {sanitized}") from exc
 
-        if response.status_code != 200:
-            body_preview = sanitize_error_message(response.text[:300])
-            logger.warning(
-                "Groq API returned HTTP %d: %s", response.status_code, body_preview
-            )
-            raise LLMProviderError(
-                f"LLM provider returned HTTP {response.status_code}: {body_preview}"
-            )
+            if response.status_code == 429:
+                if attempt < max_retries - 1:
+                    wait_sec = 8.0 * (attempt + 1)
+                    logger.warning(
+                        "Groq API returned HTTP 429 (rate limit). Retrying in %.1fs (attempt %d/%d)...",
+                        wait_sec,
+                        attempt + 1,
+                        max_retries,
+                    )
+                    time.sleep(wait_sec)
+                    continue
+
+            if response.status_code != 200:
+                body_preview = sanitize_error_message(response.text[:300])
+                logger.warning(
+                    "Groq API returned HTTP %d: %s", response.status_code, body_preview
+                )
+                raise LLMProviderError(
+                    f"LLM provider returned HTTP {response.status_code}: {body_preview}"
+                )
+
+            break
 
         try:
             data = response.json()
